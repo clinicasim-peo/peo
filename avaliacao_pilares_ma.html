@@ -725,7 +725,7 @@ function addPlanoProcessoRow(id,pilarLabel){
     +'<td><input type="text" placeholder="Setor / Responsável"></td>'
     +'<td><input type="date"></td>'
     +'<td><select><option>Pendente</option><option>Em andamento</option><option>Concluído</option></select></td>'
-    +'<td><button class="btn-del-row" type="button" onclick="this.closest('tr').remove()">x</button></td>';
+    +'<td><button class="btn-del-row" type="button" onclick="this.parentElement.parentElement.remove()">x</button></td>';
   tb.appendChild(tr);
 }
 
