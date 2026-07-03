@@ -1001,6 +1001,23 @@ function buildEvalSaveData(){
   };
 }
 
+
+// Fallback: se Firebase travar, age em 4s
+setTimeout(function(){
+  var _ov = document.getElementById('auth-overlay');
+  if(!_ov || _ov.style.display === 'none') return;
+  try {
+    var u = firebase.auth().currentUser;
+    if(u) {
+      _ov.style.display = 'none'; // logado mas Firestore travou — libera a tela
+    } else {
+      window.location.href = 'login.html'; // não logado — vai ao login
+    }
+  } catch(e) {
+    window.location.href = 'login.html';
+  }
+}, 4000);
+
 </script>
 </body>
 </html>
