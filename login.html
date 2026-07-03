@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PEO — Login</title>
+  <style>
+    :root{--blue:#0d3e54;--blue-light:#1a6a8a;--green:#2e7d32;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;
+         background:linear-gradient(135deg,#0d3e54 0%,#1a6a8a 100%);
+         font-family:Arial,sans-serif;padding:16px;}
+    .card{background:#fff;border-radius:18px;padding:40px 36px;width:100%;max-width:380px;
+          box-shadow:0 12px 40px rgba(0,0,0,.35);}
+    .logo{text-align:center;margin-bottom:28px;}
+    .logo-icon{font-size:40px;margin-bottom:8px;}
+    .logo h1{color:var(--blue);font-size:22px;font-weight:900;letter-spacing:.5px;}
+    .logo p{color:#888;font-size:12px;margin-top:4px;}
+    label{font-size:12px;font-weight:700;color:#555;display:block;margin-top:16px;}
+    input{width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:8px;
+          font-size:14px;margin-top:5px;outline:none;transition:border .2s;}
+    input:focus{border-color:var(--blue-light);}
+    .btn-login{width:100%;padding:14px;background:var(--blue);color:#fff;border:none;
+               border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;
+               margin-top:22px;transition:background .2s;letter-spacing:.3px;}
+    .btn-login:hover{background:var(--blue-light);}
+    .btn-login:disabled{background:#aaa;cursor:not-allowed;}
+    .error{color:#c62828;font-size:12px;margin-top:8px;padding:8px 10px;
+           background:#ffebee;border-radius:6px;display:none;}
+    .forgot{text-align:center;margin-top:14px;font-size:12px;color:var(--blue-light);
+            cursor:pointer;text-decoration:underline;}
+    .forgot:hover{color:var(--blue);}
+    .spinner{display:none;text-align:center;margin-top:14px;color:#888;font-size:13px;}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">🏥</div>
+    <h1>Painel PEO</h1>
+    <p>Programa de Excelência Operacional</p>
+  </div>
+  <label for="email">E-mail</label>
+  <input type="email" id="email" placeholder="seu@clinicasim.com" autocomplete="email">
+  <label for="password">Senha</label>
+  <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+  <div class="error" id="error-msg"></div>
+  <button class="btn-login" id="btn-login" onclick="doLogin()">Entrar</button>
+  <div class="spinner" id="spinner">Verificando...</div>
+  <p class="forgot" onclick="doReset()">Esqueceu a senha?</p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+
+  // If already logged in, redirect
+  auth.onAuthStateChanged(async user => {
+    if (!user) return;
+    await redirect(user);
+  });
+
+  async function redirect(user) {
+    try {
+      const doc = await db.collection('users').doc(user.uid).get();
+      const role = doc.exists ? doc.data().role : 'consultor';
+      if (role === 'admin') window.location.href = 'admin.html';
+      else window.location.href = 'index.html';
+    } catch(e) {
+      window.location.href = 'index.html';
+    }
+  }
+
+  async function doLogin() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const errEl    = document.getElementById('error-msg');
+    const btn      = document.getElementById('btn-login');
+    const spin     = document.getElementById('spinner');
+    errEl.style.display = 'none';
+    if (!email || !password) {
+      errEl.textContent = 'Preencha e-mail e senha.';
+      errEl.style.display = 'block';
+      return;
+    }
+    btn.disabled = true; spin.style.display = 'block';
+    try {
+      const cred = await auth.signInWithEmailAndPassword(email, password);
+      await redirect(cred.user);
+    } catch(e) {
+      btn.disabled = false; spin.style.display = 'none';
+      errEl.textContent =
+        e.code === 'auth/wrong-password'  ? 'Senha incorreta.' :
+        e.code === 'auth/user-not-found'  ? 'Usuário não encontrado.' :
+        e.code === 'auth/invalid-email'   ? 'E-mail inválido.' :
+        e.code === 'auth/too-many-requests' ? 'Muitas tentativas. Aguarde ou redefina a senha.' :
+        'Erro ao entrar. Tente novamente.';
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function doReset() {
+    const email = document.getElementById('email').value.trim();
+    if (!email) { alert('Digite seu e-mail primeiro.'); return; }
+    try {
+      await auth.sendPasswordResetEmail(email);
+      alert('✅ E-mail de redefinição enviado para ' + email);
+    } catch(e) {
+      alert('Erro: ' + e.message);
+    }
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>

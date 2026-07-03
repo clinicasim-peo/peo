@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PEO — Painel Admin</title>
+  <style>
+    :root{--blue:#0d3e54;--blue-light:#1a6a8a;--green:#2e7d32;--red:#c62828;
+          --orange:#e65100;--border:#d0d7dd;--muted:#777;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:Arial,sans-serif;background:#f0f4f7;min-height:100vh;font-size:13px;}
+    /* ── Header ── */
+    header{background:var(--blue);color:#fff;padding:0 24px;display:flex;
+           align-items:center;justify-content:space-between;height:54px;flex-wrap:wrap;gap:10px;}
+    header h1{font-size:17px;font-weight:900;white-space:nowrap;}
+    nav{display:flex;gap:4px;}
+    .nav-btn{background:transparent;border:none;color:rgba(255,255,255,.7);padding:8px 14px;
+             border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s;}
+    .nav-btn:hover,.nav-btn.active{background:rgba(255,255,255,.18);color:#fff;}
+    .header-right{display:flex;align-items:center;gap:12px;font-size:12px;}
+    .btn-sair{background:transparent;border:1.5px solid rgba(255,255,255,.5);color:#fff;
+              padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;transition:.2s;}
+    .btn-sair:hover{background:rgba(255,255,255,.15);}
+    /* ── Auth overlay ── */
+    #auth-overlay{position:fixed;inset:0;background:#0d3e54;display:flex;align-items:center;
+                  justify-content:center;color:#fff;font-size:16px;z-index:9999;}
+    /* ── Content ── */
+    .content{max-width:1200px;margin:0 auto;padding:24px 16px;}
+    .tab-pane{display:none;} .tab-pane.active{display:block;}
+    /* ── Stat cards ── */
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px;}
+    .stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.07);
+               border-left:4px solid var(--blue);}
+    .stat-card.green{border-color:var(--green);}
+    .stat-card.orange{border-color:var(--orange);}
+    .stat-card.red{border-color:var(--red);}
+    .stat-val{font-size:28px;font-weight:900;color:var(--blue);line-height:1;}
+    .stat-card.green .stat-val{color:var(--green);}
+    .stat-card.orange .stat-val{color:var(--orange);}
+    .stat-card.red .stat-val{color:var(--red);}
+    .stat-lbl{font-size:11px;color:var(--muted);margin-top:5px;text-transform:uppercase;font-weight:700;}
+    /* ── Section titles ── */
+    .section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .section-title{font-size:14px;font-weight:700;color:var(--blue);
+                   padding-bottom:8px;border-bottom:2px solid #e0e6ea;}
+    /* ── Tables ── */
+    .table-wrap{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:auto;}
+    table{width:100%;border-collapse:collapse;min-width:700px;}
+    th{background:var(--blue);color:#fff;padding:10px 12px;font-size:11px;text-align:left;
+       white-space:nowrap;}
+    td{padding:9px 12px;border-bottom:1px solid #f0f4f7;vertical-align:middle;color:#333;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:#f8fbfd;}
+    tr.clickable{cursor:pointer;}
+    /* ── Badges ── */
+    .badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;white-space:nowrap;}
+    .b-ok{background:#e8f5e9;color:#2e7d32;}
+    .b-no{background:#ffebee;color:#c62828;}
+    .b-cons{background:#e3f2fd;color:#1565c0;}
+    .b-aud{background:#fff3e0;color:#e65100;}
+    .b-admin{background:#ede7f6;color:#4527a0;}
+    .b-dir{background:#fce4ec;color:#880e4f;}
+    .b-cons-role{background:#e8f5e9;color:#1b5e20;}
+    .b-pend{background:#fff9c4;color:#f57f17;}
+    /* ── Filter bar ── */
+    .filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center;}
+    .filter-bar select,.filter-bar input{padding:7px 10px;border:1.5px solid var(--border);
+      border-radius:7px;font-size:12px;background:#fff;outline:none;}
+    .filter-bar select:focus,.filter-bar input:focus{border-color:var(--blue-light);}
+    .btn{display:inline-block;padding:7px 16px;border-radius:7px;border:none;cursor:pointer;
+         font-size:12px;font-weight:700;transition:.15s;}
+    .btn-primary{background:var(--blue);color:#fff;}
+    .btn-primary:hover{background:var(--blue-light);}
+    .btn-success{background:var(--green);color:#fff;}
+    .btn-success:hover{opacity:.85;}
+    .btn-danger{background:var(--red);color:#fff;}
+    .btn-danger:hover{opacity:.85;}
+    .btn-secondary{background:#fff;border:1.5px solid var(--border);color:#333;}
+    .btn-secondary:hover{background:#f5f8fa;}
+    /* ── Modal ── */
+    .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;
+              align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
+    .modal-bg.open{display:flex;}
+    .modal{background:#fff;border-radius:14px;width:100%;max-width:860px;
+           box-shadow:0 16px 48px rgba(0,0,0,.3);overflow:hidden;}
+    .modal-header{background:var(--blue);color:#fff;padding:16px 20px;
+                  display:flex;justify-content:space-between;align-items:center;}
+    .modal-header h2{font-size:15px;font-weight:800;}
+    .modal-close{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;}
+    .modal-body{padding:20px;max-height:75vh;overflow-y:auto;}
+    /* ── Eval detail ── */
+    .eval-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px;}
+    .eval-meta-card{background:#f5f8fa;border-radius:8px;padding:12px;font-size:12px;}
+    .eval-meta-card label{color:var(--muted);text-transform:uppercase;font-weight:700;font-size:10px;display:block;margin-bottom:3px;}
+    .pilar-row{display:flex;justify-content:space-between;padding:7px 0;
+               border-bottom:1px solid var(--border);align-items:center;}
+    .pilar-bar{flex:1;height:8px;background:#e0e6ea;border-radius:4px;margin:0 12px;}
+    .pilar-bar-fill{height:100%;border-radius:4px;transition:width .3s;}
+    .qualif-badge{text-align:center;padding:14px;border-radius:10px;font-size:18px;
+                  font-weight:900;margin:14px 0;}
+    .qualif-badge.ok{background:#e8f5e9;color:var(--green);}
+    .qualif-badge.no{background:#ffebee;color:var(--red);}
+    /* ── User form ── */
+    .form-group{margin-bottom:14px;}
+    .form-group label{font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:4px;}
+    .form-group input,.form-group select{width:100%;padding:10px 12px;border:1.5px solid var(--border);
+      border-radius:8px;font-size:13px;outline:none;}
+    .form-group input:focus,.form-group select:focus{border-color:var(--blue-light);}
+    /* ── Empty / loading ── */
+    .empty{text-align:center;padding:32px;color:var(--muted);font-size:13px;}
+    /* ── Mobile ── */
+    @media(max-width:600px){
+      header{height:auto;padding:10px 14px;}
+      nav .nav-btn{padding:6px 8px;font-size:11px;}
+      .content{padding:14px 10px;}
+    }
+  </style>
+</head>
+<body>
+<div id="auth-overlay">🔄 Verificando acesso...</div>
+
+<header>
+  <h1>🏥 PEO Admin</h1>
+  <nav>
+    <button class="nav-btn active" onclick="showTab('dashboard',this)">Dashboard</button>
+    <button class="nav-btn" onclick="showTab('avaliacoes',this)">Avaliações</button>
+    <button class="nav-btn" onclick="showTab('usuarios',this)">Usuários</button>
+  </nav>
+  <div class="header-right">
+    <span id="admin-name">—</span>
+    <button class="btn-sair" onclick="doLogout()">Sair</button>
+  </div>
+</header>
+
+<div class="content" id="app" style="display:none">
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="tab-pane active" id="tab-dashboard">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total de avaliações</div></div>
+      <div class="stat-card green"><div class="stat-val" id="stat-qualif">—</div><div class="stat-lbl">Qualificadas</div></div>
+      <div class="stat-card orange"><div class="stat-val" id="stat-mes">—</div><div class="stat-lbl">Este mês</div></div>
+      <div class="stat-card red"><div class="stat-val" id="stat-users">—</div><div class="stat-lbl">Usuários ativos</div></div>
+    </div>
+    <div class="section-title" style="margin-bottom:14px">Últimas 10 avaliações</div>
+    <div class="table-wrap"><div class="empty" id="dash-empty">Carregando...</div>
+      <table id="dash-table" style="display:none">
+        <thead><tr><th>Data</th><th>Unidade</th><th>Tipo</th><th>Período</th><th>Avaliador</th><th>Gestão</th><th>Gente</th><th>Operações</th><th>Vendas</th><th>Result.</th><th>Qualif.</th></tr></thead>
+        <tbody id="dash-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ AVALIAÇÕES ══ -->
+  <div class="tab-pane" id="tab-avaliacoes">
+    <div class="filter-bar">
+      <input type="text" id="f-unit" placeholder="Filtrar unidade..." style="width:160px" oninput="renderAvaliacoes()">
+      <select id="f-tipo" onchange="renderAvaliacoes()">
+        <option value="">Todos os tipos</option>
+        <option value="Consultoria">Consultoria</option>
+        <option value="Auditoria">Auditoria</option>
+      </select>
+      <select id="f-eval" onchange="renderAvaliacoes()">
+        <option value="">Todos os avaliadores</option>
+      </select>
+      <select id="f-qualif" onchange="renderAvaliacoes()">
+        <option value="">Todos os resultados</option>
+        <option value="1">Qualificadas</option>
+        <option value="0">Não qualificadas</option>
+      </select>
+      <button class="btn btn-success" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="table-wrap">
+      <div class="empty" id="aval-empty">Carregando avaliações...</div>
+      <table id="aval-table" style="display:none">
+        <thead><tr><th>Data</th><th>Unidade</th><th>Tipo</th><th>Período Res.</th><th>Avaliador</th><th>Gestão</th><th>Gente</th><th>Operações</th><th>Vendas</th><th>Result.</th><th>Qualif.</th></tr></thead>
+        <tbody id="aval-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ USUÁRIOS ══ -->
+  <div class="tab-pane" id="tab-usuarios">
+    <div class="section-hd" style="margin-bottom:14px">
+      <span class="section-title" style="border:none;padding:0">Usuários do sistema</span>
+      <button class="btn btn-primary" onclick="openNewUser()">+ Novo Usuário</button>
+    </div>
+    <div class="table-wrap">
+      <div class="empty" id="user-empty">Carregando usuários...</div>
+      <table id="user-table" style="display:none">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Criado em</th><th>Ações</th></tr></thead>
+        <tbody id="user-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ══ MODAL: Detalhes da Avaliação ══ -->
+<div class="modal-bg" id="modal-eval">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-eval-title">Avaliação</h2>
+      <button class="modal-close" onclick="closeModal('modal-eval')">×</button>
+    </div>
+    <div class="modal-body" id="modal-eval-body"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Novo / Editar Usuário ══ -->
+<div class="modal-bg" id="modal-user">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2 id="modal-user-title">Novo Usuário</h2>
+      <button class="modal-close" onclick="closeModal('modal-user')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input type="text" id="u-name" placeholder="Ex: João Silva">
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="u-email" placeholder="joao@clinicasim.com">
+      </div>
+      <div class="form-group" id="u-pass-group">
+        <label>Senha inicial (mínimo 6 caracteres)</label>
+        <input type="password" id="u-pass" placeholder="Senha temporária">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">O usuário receberá e-mail para redefinir a senha.</div>
+      </div>
+      <div class="form-group">
+        <label>Papel</label>
+        <select id="u-role">
+          <option value="consultor">Consultor / Auditor</option>
+          <option value="diretoria">Diretoria (somente leitura)</option>
+          <option value="admin">Admin (acesso total)</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+        <button class="btn btn-secondary" onclick="closeModal('modal-user')">Cancelar</button>
+        <button class="btn btn-primary" id="btn-save-user" onclick="saveUser()">Criar usuário</button>
+      </div>
+      <div id="u-error" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+let secondaryApp;
+let allEvals = [], allUsers = [];
+let editingUid = null;
+
+// ── Auth check ──────────────────────────────────────────────────────────────
+auth.onAuthStateChanged(async user => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  const doc = await db.collection('users').doc(user.uid).get();
+  const role = doc.exists ? doc.data().role : '';
+  if (role !== 'admin') { window.location.href = 'index.html'; return; }
+  document.getElementById('admin-name').textContent = doc.data().name || user.email;
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadAll();
+});
+
+function doLogout() { auth.signOut().then(() => window.location.href = 'login.html'); }
+
+// ── Data loading ─────────────────────────────────────────────────────────────
+async function loadAll() {
+  await Promise.all([loadEvals(), loadUsers()]);
+}
+
+async function loadEvals() {
+  try {
+    const snap = await db.collection('evaluations').orderBy('submittedAt','desc').get();
+    allEvals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderDashboard();
+    renderAvaliacoes();
+    populateEvaluatorFilter();
+  } catch(e) {
+    document.getElementById('dash-empty').textContent = 'Erro ao carregar avaliações.';
+    document.getElementById('aval-empty').textContent = 'Erro ao carregar avaliações.';
+  }
+}
+
+async function loadUsers() {
+  try {
+    const snap = await db.collection('users').get();
+    allUsers = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    renderUsers();
+    document.getElementById('stat-users').textContent = allUsers.filter(u => u.active !== false).length;
+  } catch(e) {
+    document.getElementById('user-empty').textContent = 'Erro ao carregar usuários.';
+  }
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const total = allEvals.length;
+  const qualif = allEvals.filter(e => e.qualificacao && e.qualificacao.qualified).length;
+  const now = new Date(), m = now.getMonth(), y = now.getFullYear();
+  const mes = allEvals.filter(e => {
+    if (!e.submittedAt) return false;
+    const d = e.submittedAt.toDate();
+    return d.getMonth() === m && d.getFullYear() === y;
+  }).length;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-qualif').textContent = total > 0 ? Math.round(qualif/total*100)+'%' : '—';
+  document.getElementById('stat-mes').textContent = mes;
+
+  const tbody = document.getElementById('dash-tbody');
+  tbody.innerHTML = '';
+  allEvals.slice(0, 10).forEach(e => {
+    tbody.innerHTML += buildEvalRow(e, true);
+  });
+
+  const tbl = document.getElementById('dash-table');
+  if (total > 0) {
+    document.getElementById('dash-empty').style.display = 'none';
+    tbl.style.display = '';
+  }
+}
+
+// ── Avaliações tab ───────────────────────────────────────────────────────────
+function renderAvaliacoes() {
+  const fUnit   = document.getElementById('f-unit').value.toLowerCase();
+  const fTipo   = document.getElementById('f-tipo').value;
+  const fEval   = document.getElementById('f-eval').value;
+  const fQualif = document.getElementById('f-qualif').value;
+
+  const filtered = allEvals.filter(e => {
+    if (fUnit   && !(e.unitName||'').toLowerCase().includes(fUnit)) return false;
+    if (fTipo   && e.tipo !== fTipo) return false;
+    if (fEval   && e.evaluatorName !== fEval) return false;
+    if (fQualif === '1' && !(e.qualificacao && e.qualificacao.qualified)) return false;
+    if (fQualif === '0' && (e.qualificacao && e.qualificacao.qualified)) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('aval-tbody');
+  tbody.innerHTML = '';
+  filtered.forEach(e => { tbody.innerHTML += buildEvalRow(e, true); });
+
+  const tbl = document.getElementById('aval-table');
+  const empty = document.getElementById('aval-empty');
+  if (filtered.length > 0) { empty.style.display='none'; tbl.style.display=''; }
+  else { empty.style.display=''; empty.textContent='Nenhuma avaliação encontrada.'; tbl.style.display='none'; }
+}
+
+function populateEvaluatorFilter() {
+  const names = [...new Set(allEvals.map(e => e.evaluatorName).filter(Boolean))].sort();
+  const sel = document.getElementById('f-eval');
+  names.forEach(n => { const o = document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+}
+
+function pctCell(pid, pilarScores) {
+  if (!pilarScores || !pilarScores[pid]) return '<td>—</td>';
+  const p = pilarScores[pid];
+  const col = p.pct >= 65 ? '#2e7d32' : '#c62828';
+  return `<td style="color:${col};font-weight:700">${p.pct}%</td>`;
+}
+
+function buildEvalRow(e, clickable) {
+  const dt = e.submittedAt ? e.submittedAt.toDate().toLocaleDateString('pt-BR') : (e.date||'—');
+  const qual = e.qualificacao;
+  const badgeQ = qual && qual.qualified
+    ? '<span class="badge b-ok">✓</span>'
+    : '<span class="badge b-no">✗</span>';
+  const badgeT = e.tipo === 'Auditoria'
+    ? '<span class="badge b-aud">Aud</span>'
+    : '<span class="badge b-cons">Cons</span>';
+  const ps = e.pilarScores || {};
+  const resMet = qual ? qual.resMet : '—';
+  return `<tr class="${clickable?'clickable':''}" onclick="openEval('${e.id}')">
+    <td>${dt}</td>
+    <td>${e.unitName||'—'}</td>
+    <td>${badgeT}</td>
+    <td>${e.periodoRes||e.period||'—'}</td>
+    <td>${e.evaluatorName||'—'}</td>
+    ${pctCell('gestao',ps)}${pctCell('gente',ps)}${pctCell('operacoes',ps)}${pctCell('vendas',ps)}
+    <td>${resMet}</td>
+    <td>${badgeQ}</td>
+  </tr>`;
+}
+
+// ── Evaluation detail modal ──────────────────────────────────────────────────
+function openEval(id) {
+  const e = allEvals.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('modal-eval-title').textContent = `${e.unitName||'—'} — ${e.period||''} (${e.tipo||''})`;
+  const ps = e.pilarScores || {};
+  const qual = e.qualificacao || {};
+  const dt = e.submittedAt ? e.submittedAt.toDate().toLocaleDateString('pt-BR') : (e.date||'—');
+
+  let pilarRows = '';
+  Object.entries(ps).forEach(([pid, p]) => {
+    const ok = p.pct >= 65;
+    const col = ok ? '#2e7d32' : '#c62828';
+    pilarRows += `<div class="pilar-row">
+      <span style="font-size:13px;width:90px">${p.label||pid}</span>
+      <div class="pilar-bar"><div class="pilar-bar-fill" style="width:${p.pct}%;background:${col}"></div></div>
+      <span style="font-weight:700;color:${col};width:50px;text-align:right">${p.pct}%</span>
+      <span style="color:${col};margin-left:8px">${ok?'✓':'✗'}</span>
+    </div>`;
+  });
+
+  let resRows = '';
+  if (e.resultados) {
+    Object.entries(e.resultados).forEach(([k, r]) => {
+      const col = r.ok ? '#2e7d32' : '#c62828';
+      resRows += `<tr><td>${r.label||k}</td><td style="text-align:center">${r.meta||'—'}</td>
+        <td style="text-align:center">${r.real||'—'}</td>
+        <td style="text-align:center;color:${col};font-weight:700">${r.ok?'✓':'✗'}</td></tr>`;
+    });
+  }
+
+  let casosRows = '';
+  if (e.flaggedCases) {
+    Object.entries(e.flaggedCases).forEach(([pid, f]) => {
+      casosRows += `<div style="padding:10px;background:#fafafa;border-left:4px solid #e65100;border-radius:6px;margin-bottom:8px;">
+        <b style="font-size:12px;color:#e65100">${pid}</b>
+        ${f.note ? `<div style="font-size:12px;margin-top:4px">${f.note.replace(/\n/g,'<br>')}</div>` : ''}
+      </div>`;
+    });
+  }
+
+  const qualBadge = qual.qualified
+    ? '<div class="qualif-badge ok">✓ UNIDADE QUALIFICADA</div>'
+    : '<div class="qualif-badge no">✗ UNIDADE NÃO QUALIFICADA</div>';
+
+  document.getElementById('modal-eval-body').innerHTML = `
+    <div class="eval-meta-grid">
+      <div class="eval-meta-card"><label>Data</label>${dt}</div>
+      <div class="eval-meta-card"><label>Unidade</label>${e.unitName||'—'}</div>
+      <div class="eval-meta-card"><label>Tipo</label>${e.tipo||'—'}</div>
+      <div class="eval-meta-card"><label>Período Resultados</label>${e.periodoRes||e.period||'—'}</div>
+      <div class="eval-meta-card"><label>Avaliador</label>${e.evaluatorName||'—'}</div>
+      <div class="eval-meta-card"><label>Papel</label>${e.role||'—'}</div>
+    </div>
+    ${qualBadge}
+    <div style="font-size:13px;font-weight:700;color:var(--blue);margin:14px 0 8px">Categoria Meios</div>
+    ${pilarRows || '<div style="color:var(--muted);font-size:12px">Sem dados</div>'}
+    <div style="font-size:13px;font-weight:700;color:var(--blue);margin:14px 0 8px">Categoria Resultados</div>
+    <table style="min-width:0;width:100%;font-size:12px">
+      <thead style=""><tr style="background:#f0f4f7"><th>Indicador</th><th>Meta</th><th>Real</th><th>Status</th></tr></thead>
+      <tbody>${resRows||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">Sem dados</td></tr>'}</tbody>
+    </table>
+    ${casosRows ? `<div style="font-size:13px;font-weight:700;color:var(--blue);margin:14px 0 8px">Casos para atuação</div>${casosRows}` : ''}
+  `;
+  document.getElementById('modal-eval').classList.add('open');
+}
+
+// ── Users tab ─────────────────────────────────────────────────────────────────
+function renderUsers() {
+  const tbody = document.getElementById('user-tbody');
+  tbody.innerHTML = '';
+  if (allUsers.length === 0) { document.getElementById('user-empty').textContent = 'Nenhum usuário cadastrado.'; return; }
+  document.getElementById('user-empty').style.display = 'none';
+  document.getElementById('user-table').style.display = '';
+  allUsers.sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(u => {
+    const roleLabel = u.role === 'admin' ? '<span class="badge b-admin">Admin</span>'
+      : u.role === 'diretoria' ? '<span class="badge b-dir">Diretoria</span>'
+      : '<span class="badge b-cons-role">Consultor</span>';
+    const dt = u.createdAt ? u.createdAt.toDate().toLocaleDateString('pt-BR') : '—';
+    const active = u.active !== false;
+    tbody.innerHTML += `<tr>
+      <td>${u.name||'—'}</td>
+      <td>${u.email||'—'}</td>
+      <td>${roleLabel}</td>
+      <td>${dt}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px"
+          onclick="openEditUser('${u.uid}')">Editar papel</button>
+        <button class="btn ${active?'btn-danger':'btn-success'}" style="font-size:11px;padding:4px 10px"
+          onclick="toggleUser('${u.uid}',${active})">${active?'Desativar':'Ativar'}</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function openNewUser() {
+  editingUid = null;
+  document.getElementById('modal-user-title').textContent = 'Novo Usuário';
+  document.getElementById('u-name').value = '';
+  document.getElementById('u-email').value = '';
+  document.getElementById('u-pass').value = '';
+  document.getElementById('u-role').value = 'consultor';
+  document.getElementById('u-pass-group').style.display = '';
+  document.getElementById('btn-save-user').textContent = 'Criar usuário';
+  document.getElementById('u-error').style.display = 'none';
+  document.getElementById('modal-user').classList.add('open');
+}
+
+function openEditUser(uid) {
+  const u = allUsers.find(x => x.uid === uid);
+  if (!u) return;
+  editingUid = uid;
+  document.getElementById('modal-user-title').textContent = 'Editar Papel';
+  document.getElementById('u-name').value = u.name || '';
+  document.getElementById('u-email').value = u.email || '';
+  document.getElementById('u-pass').value = '';
+  document.getElementById('u-role').value = u.role || 'consultor';
+  document.getElementById('u-pass-group').style.display = 'none';
+  document.getElementById('btn-save-user').textContent = 'Salvar';
+  document.getElementById('u-error').style.display = 'none';
+  document.getElementById('modal-user').classList.add('open');
+}
+
+async function saveUser() {
+  const name  = document.getElementById('u-name').value.trim();
+  const email = document.getElementById('u-email').value.trim();
+  const pass  = document.getElementById('u-pass').value;
+  const role  = document.getElementById('u-role').value;
+  const errEl = document.getElementById('u-error');
+  const btn   = document.getElementById('btn-save-user');
+  errEl.style.display = 'none';
+
+  if (editingUid) {
+    // Edit role only
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try {
+      await db.collection('users').doc(editingUid).update({ name, role });
+      const idx = allUsers.findIndex(u => u.uid === editingUid);
+      if (idx !== -1) { allUsers[idx].name = name; allUsers[idx].role = role; }
+      renderUsers();
+      closeModal('modal-user');
+    } catch(e) { errEl.textContent = 'Erro: ' + e.message; errEl.style.display='block'; }
+    finally { btn.disabled = false; btn.textContent = 'Salvar'; }
+    return;
+  }
+
+  if (!name || !email || !pass) { errEl.textContent='Preencha todos os campos.'; errEl.style.display='block'; return; }
+  if (pass.length < 6) { errEl.textContent='Senha deve ter ao menos 6 caracteres.'; errEl.style.display='block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Criando...';
+  try {
+    if (!secondaryApp) secondaryApp = firebase.initializeApp(firebaseConfig, 'secondary');
+    const cred = await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
+    const uid  = cred.user.uid;
+    await secondaryApp.auth().signOut();
+    const userData = { name, email, role, active: true, createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: auth.currentUser.uid };
+    await db.collection('users').doc(uid).set(userData);
+    // Send password reset so user sets own password
+    await auth.sendPasswordResetEmail(email);
+    allUsers.push({ uid, ...userData });
+    renderUsers();
+    document.getElementById('stat-users').textContent = allUsers.filter(u => u.active !== false).length;
+    closeModal('modal-user');
+    alert('✅ Usuário criado!\nUm e-mail de definição de senha foi enviado para ' + email);
+  } catch(e) {
+    errEl.textContent = e.code === 'auth/email-already-in-use' ? 'E-mail já cadastrado.'
+      : e.code === 'auth/invalid-email' ? 'E-mail inválido.'
+      : 'Erro: ' + e.message;
+    errEl.style.display = 'block';
+  } finally { btn.disabled = false; btn.textContent = 'Criar usuário'; }
+}
+
+async function toggleUser(uid, currentlyActive) {
+  if (!confirm(currentlyActive ? 'Desativar este usuário?' : 'Reativar este usuário?')) return;
+  await db.collection('users').doc(uid).update({ active: !currentlyActive });
+  const u = allUsers.find(x => x.uid === uid);
+  if (u) u.active = !currentlyActive;
+  renderUsers();
+  document.getElementById('stat-users').textContent = allUsers.filter(u => u.active !== false).length;
+}
+
+// ── CSV Export ───────────────────────────────────────────────────────────────
+function exportCSV() {
+  const header = ['Data','Unidade','Tipo','Período','Avaliador','Gestão%','Gente%','Operações%','Vendas%','Resultados','Qualificada'];
+  const rows = allEvals.map(e => {
+    const ps = e.pilarScores || {};
+    const dt = e.submittedAt ? e.submittedAt.toDate().toLocaleDateString('pt-BR') : (e.date||'');
+    const qual = e.qualificacao || {};
+    return [
+      dt, e.unitName||'', e.tipo||'', e.periodoRes||e.period||'', e.evaluatorName||'',
+      ps.gestao   ? ps.gestao.pct   : '',
+      ps.gente    ? ps.gente.pct    : '',
+      ps.operacoes ? ps.operacoes.pct : '',
+      ps.vendas   ? ps.vendas.pct   : '',
+      qual.resMet !== undefined ? qual.resMet : '',
+      qual.qualified ? 'Sim' : 'Não'
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+  const csv = [header.join(','), ...rows].join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'avaliacoes_peo_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+</script>
+</body>
+</html>

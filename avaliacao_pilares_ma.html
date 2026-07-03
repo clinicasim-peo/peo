@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel PEO - Maranhão</title>
+<style>
+  :root{--blue:#0d3e54;--blue-light:#1a6a8a;--green:#2e7d32;--red:#c62828;--orange:#e65100;--gray:#f5f6f8;--border:#dee2e6;--text:#212529;--muted:#6c757d;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:var(--gray);color:var(--text);font-size:14px;}
+  .header{background:var(--blue);color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  .header h1{font-size:18px;font-weight:700;}
+  .header-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .badge{background:rgba(255,255,255,.15);border-radius:6px;padding:4px 12px;font-size:12px;}
+  .setup-bar{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+  .setup-bar label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-right:4px;}
+  .setup-bar input,.setup-bar select{border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--text);}
+  .sep{width:1px;height:32px;background:var(--border);}
+  .tabs{background:#fff;border-bottom:2px solid var(--border);padding:0 24px;display:flex;gap:2px;overflow-x:auto;}
+  .tab{padding:12px 18px;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;font-size:13px;color:var(--muted);white-space:nowrap;transition:all .15s;margin-bottom:-2px;}
+  .tab:hover{color:var(--blue);}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+  .tab-score{font-size:11px;background:var(--gray);border-radius:10px;padding:1px 7px;margin-left:6px;font-weight:700;}
+  .tab.active .tab-score{background:var(--blue);color:#fff;}
+  .content{padding:24px;max-width:1100px;margin:0 auto;}
+  .pane{display:none;}.pane.active{display:block;}
+  .pilar-header{background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);flex-wrap:wrap;gap:12px;}
+  .pilar-header h2{font-size:16px;font-weight:700;color:var(--blue);}
+  .pilar-totals{display:flex;gap:20px;}
+  .total-box{text-align:center;}
+  .total-box .val{font-size:22px;font-weight:800;color:var(--blue);}
+  .total-box .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;}
+  .process-card{background:#fff;border-radius:10px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;}
+  .process-title{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;}
+  .process-title:hover{background:#f8f9fa;}
+  .process-name{font-weight:700;font-size:14px;}
+  .process-pts{font-size:12px;color:var(--muted);margin-top:2px;}
+  .process-pts strong{color:var(--blue);font-size:14px;}
+  .toggle-icon{color:var(--muted);font-size:18px;transition:transform .2s;flex-shrink:0;}
+  .process-card.open .toggle-icon{transform:rotate(180deg);}
+  .process-body{display:none;border-top:1px solid var(--border);padding:16px;}
+  .process-card.open .process-body{display:block;}
+  .pergunta-box{background:#f0f5ff;border-left:3px solid var(--blue-light);border-radius:0 6px 6px 0;padding:10px 12px;margin-bottom:12px;font-size:13px;line-height:1.5;color:var(--text);display:flex;align-items:flex-start;gap:8px;}
+  .perg-icon{background:var(--blue);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;}
+  .ind-row{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:12px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+  .ind-label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);font-weight:500;flex:1;min-width:180px;}
+  .ind-tag{background:var(--orange);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;}
+  .ind-fields{display:flex;gap:10px;flex-wrap:wrap;}
+  .ind-field{display:flex;flex-direction:column;gap:3px;}
+  .ind-field label{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);}
+  .ind-field input{border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;width:110px;font-family:inherit;}
+  .ind-field input:focus{outline:none;border-color:var(--blue-light);}
+  .delta-val{border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;min-width:80px;text-align:center;background:#f8f9fa;}
+  .delta-ok{background:#e8f5e9;color:var(--green);border-color:#a5d6a7;}
+  .delta-warn{background:#fff3e0;color:var(--orange);border-color:#ffcc80;}
+  .delta-bad{background:#ffebee;color:var(--red);border-color:#ef9a9a;}
+  .rule-box{background:#fffbf0;border-left:3px solid #f9a825;border-radius:0 6px 6px 0;padding:10px 12px;margin-bottom:14px;font-size:12px;line-height:1.6;color:#555;}
+  .rule-box b{color:var(--text);}
+  .score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+  .score-col label.col-title{display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  .score-options{display:flex;gap:6px;}
+  .score-btn{flex:1;padding:8px 4px;border:2px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;font-weight:700;font-size:15px;transition:all .15s;background:#fff;}
+  .score-btn:hover{border-color:var(--blue-light);background:#f0f5ff;}
+  .score-btn.selected-0{border-color:var(--red);background:#ffebee;color:var(--red);}
+  .score-btn.selected-1{border-color:#f57c00;background:#fff3e0;color:#e65100;}
+  .score-btn.selected-3{border-color:var(--green);background:#e8f5e9;color:var(--green);}
+  .score-btn span{display:block;font-size:10px;font-weight:400;color:inherit;opacity:.8;}
+  .obs-field{margin-top:12px;}
+  .obs-field label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px;}
+  .obs-field textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;resize:vertical;min-height:56px;font-family:inherit;}
+  .obs-field textarea:focus{outline:none;border-color:var(--blue-light);}
+  .prog-bar{height:6px;background:#e9ecef;border-radius:3px;margin-top:8px;overflow:hidden;}
+  .prog-fill{height:100%;border-radius:3px;transition:width .3s;background:var(--blue);}
+  .results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;}
+  .result-card{background:#fff;border-radius:10px;border:1px solid var(--border);padding:18px;text-align:center;}
+  .result-card h3{font-size:12px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .result-pct{font-size:36px;font-weight:900;color:var(--blue);}
+  .result-pts{font-size:13px;color:var(--muted);margin-top:4px;}
+  .result-status{margin-top:8px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block;}
+  .status-ok{background:#e8f5e9;color:var(--green);}
+  .status-warn{background:#fff3e0;color:var(--orange);}
+  .plano-table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+  .plano-table th{background:var(--blue);color:#fff;padding:10px 12px;text-align:left;font-size:12px;text-transform:uppercase;}
+  .plano-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .plano-table tr:last-child td{border-bottom:none;}
+  .plano-table input,.plano-table select,.plano-table textarea{width:100%;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-family:inherit;font-size:13px;}
+  .plano-table textarea{min-height:40px;resize:vertical;}
+  .btn-add-row{margin-top:10px;padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;}
+  .btn-del-row{background:#ffebee;border:none;color:var(--red);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:12px;}
+  .export-bar{background:#fff;border-top:1px solid var(--border);padding:12px 24px;display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;z-index:100;flex-wrap:wrap;}
+  .btn{padding:9px 20px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-secondary{background:#fff;color:var(--blue);border:2px solid var(--blue);}
+  .btn-green{background:var(--green);color:#fff;}
+  .res-pts-badge{display:inline-block;padding:4px 12px;border-radius:6px;font-weight:700;font-size:14px;background:#f5f6f8;border:1px solid var(--border);}
+  .res-pts-ok{background:#e8f5e9;color:var(--green);border-color:#a5d6a7;}
+  .res-pts-bad{background:#ffebee;color:var(--red);border-color:#ef9a9a;}
+  @media print{.setup-bar,.tabs,.export-bar,.toggle-icon,.photo-btn,.photo-del{display:none!important;}.pane{display:block!important;}.process-body{display:block!important;}.content{padding:0;}.photo-wrap{display:block!important;}.photo-preview{display:flex!important;flex-wrap:wrap;gap:4px;}.photo-thumb-wrap{display:inline-block!important;}.photo-thumb{width:72px!important;height:72px!important;}.process-card{page-break-inside:avoid;}#qualif-banner{display:block!important;}}
+
+  /* ── Fotos ── */
+  .photo-wrap{margin-top:14px;border-top:1px dashed var(--border);padding-top:12px;}
+  .photo-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .photo-btn{display:inline-block;padding:5px 14px;background:#fff;border:2px dashed var(--border);border-radius:6px;cursor:pointer;font-size:12px;color:var(--blue);font-weight:600;transition:all .15s;}
+  .photo-btn:hover{border-color:var(--blue);background:#f0f5ff;}
+  .photo-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .photo-thumb-wrap{position:relative;display:inline-block;}
+  .photo-thumb{width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block;}
+  .photo-del{position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:13px;line-height:20px;text-align:center;cursor:pointer;padding:0;}
+  /* photo print merged */
+
+  /* ── Caso para atuação ── */
+  .caso-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border:2px solid var(--orange);border-radius:20px;background:transparent;color:var(--orange);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:12px;width:auto;}
+  .caso-btn.active{background:var(--orange);color:#fff;}
+  .caso-btn:hover{background:var(--orange);color:#fff;opacity:.9;}
+  .caso-note-wrap{display:none;margin-top:8px;}
+  .caso-note-wrap.show{display:block;}
+  .caso-note-wrap textarea{width:100%;min-height:72px;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;resize:vertical;box-sizing:border-box;font-family:inherit;}
+  /* ── Plano de ação por processo ── */
+  .plano-proc-wrap{margin-top:12px;border-top:1px dashed var(--border);padding-top:10px;}
+  .plano-proc-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:4px;display:block;}
+  .plano-proc-wrap textarea{width:100%;min-height:60px;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;resize:vertical;box-sizing:border-box;font-family:inherit;}
+  @media print{.caso-btn{display:none!important;}.caso-note-wrap{display:block!important;}.plano-proc-wrap{display:block!important;}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+</head>
+<body>
+<div id="auth-overlay" style="position:fixed;inset:0;background:#0d3e54;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;z-index:9999">🔄 Verificando acesso...</div>
+<div class="header">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <a href="index.html" style="color:rgba(255,255,255,.65);text-decoration:none;font-size:12px;white-space:nowrap">&larr; Voltar</a>
+    <div><h1>Painel PEO</h1><div style="font-size:12px;opacity:.75;margin-top:2px;">Maranhão</div></div>
+  </div>
+  <div class="header-meta">
+    <span class="badge" id="hdr-role">Papel: ---</span>
+    <span class="badge" id="hdr-unit">Unidade: ---</span>
+    <span class="badge" id="hdr-date"></span>
+    <span class="badge" id="hdr-user" style="display:none;background:rgba(255,255,255,.25)"></span>
+    <button onclick="doLogout()" id="btn-logout" style="background:transparent;border:1.5px solid rgba(255,255,255,.5);color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;display:none">Sair</button>
+  </div>
+</div>
+<div class="setup-bar">
+  <label>Unidade</label><select id="unit-select" onchange="updateHeader();tryAutoFill()"><option value="">(selecionar)</option><option value="Pátio Norte">Pátio Norte</option><option value="Cohab I (Elevado)">Cohab I (Elevado)</option><option value="Cohab II (Terminal)">Cohab II (Terminal)</option><option value="Turu">Turu</option><option value="Marcus Center">Marcus Center</option><option value="Rua Grande">Rua Grande</option></select>
+  <div class="sep"></div>
+  <label>Papel</label>
+  <select id="role-select" onchange="updateHeader();updateRoleVisibility()"><option value="">Selecionar</option><option value="autoavaliacao">Autoavaliação</option><option value="consultoria1">Consultoria 1</option><option value="consultoria2">Consultoria 2</option><option value="auditoria">Auditoria</option></select>
+  <div class="sep"></div>
+  <label>Avaliador</label><input type="text" id="evaluator-name" placeholder="Seu nome" oninput="updateHeader()">
+  <div class="sep"></div>
+  <label>Data</label><input type="date" id="eval-date" oninput="updateHeader()">
+  <div class="sep"></div>
+  <label>Per&#237;odo</label><input type="month" id="ref-period" oninput="updateHeader()" title="M&#234;s de refer&#234;ncia">
+  <div class="sep"></div>
+  <label title="M&#234;s anterior (Consultoria) ou Trimestre (Auditoria)">Per. Resultados</label><input type="text" id="periodo-res" placeholder="Ex: Mai/26 ou T2&#160;2026" style="width:110px;" oninput="updateHeader()">
+  <div class="sep"></div>
+  <label>Dados</label>
+  <button class="btn btn-secondary" style="padding:5px 12px;font-size:12px;" onclick="document.getElementById('imp-ma').click()">&#8679; Importar</button>
+  <input type="file" id="imp-ma" accept=".json,.csv" style="display:none" onchange="handleImport(this)">
+  <button class="btn btn-secondary" style="padding:5px 12px;font-size:12px;" onclick="downloadTemplate()">&#8681; Template</button>
+  <span id="import-status" style="font-size:11px;color:var(--muted);margin-left:2px;"></span>
+</div>
+<div class="tabs">
+<div class="tab active" onclick="showTab('gestao',this)">Gestão <span class="tab-score" id="ts-gestao">0%</span></div><div class="tab" onclick="showTab('gente',this)">Gente <span class="tab-score" id="ts-gente">0%</span></div><div class="tab" onclick="showTab('operacoes',this)">Operações <span class="tab-score" id="ts-operacoes">0%</span></div><div class="tab" onclick="showTab('vendas',this)">Vendas <span class="tab-score" id="ts-vendas">0%</span></div><div class="tab" onclick="showTab('resultados',this)">Resultados <span class="tab-score" id="ts-resultados">---</span></div><div class="tab" onclick="showTab('resumo',this)">Resumo</div><div class="tab" onclick="showTab('plano',this)">Plano de Ação</div>
+</div>
+<div class="content">
+<div class="pane active" id="pane-gestao"><div class="pilar-header"><h2>Pilar Gestão</h2><div class="pilar-totals"><div class="total-box"><div class="val" id="score-gestao">0</div><div class="lbl">Pontos</div></div><div class="total-box"><div class="val" id="pct-gestao">0%</div><div class="lbl">Atingimento</div></div><div class="total-box"><div class="val">100</div><div class="lbl">Máximo</div></div></div></div><div class="process-card" id="card-gest_5s"><div class="process-title" onclick="toggleCard('gest_5s')"><div><div class="process-name">Gestão do 5S</div><div class="process-pts">Peso: <strong>25 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gest_5s">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>As pessoas conhecem e praticam os conceitos de 5S, tendo aderência ao check list acima da meta?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% de checklists 5S</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-gest_5s" placeholder="Ex: 80%" oninput="calcDelta('gest_5s')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-gest_5s" placeholder="Ex: 94%" oninput="calcDelta('gest_5s')"></div><div class="ind-field"><label>Delta</label><div id="delta-gest_5s" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Time não conhece o 5S / indicador abaixo de 80%<br><b>1:</b> Conformidade parcial: Conhecimento sobre o 5S / Não execução do plano de ação / Indicador acima de 80%<br><b>3:</b> Conformidade total: Conhecimento presente / Plano de ação sendo executado / Indicador acima de 80%</div><div class="score-grid" id="sg-gest_5s"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gest_5s" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-gest_canal"><div class="process-title" onclick="toggleCard('gest_canal')"><div><div class="process-name">Canal de Denúncias</div><div class="process-pts">Peso: <strong>10 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gest_canal">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>Todos os colaboradores conhecem o canal de denúncia e sabem como acessá-lo?</div><div class="rule-box"><b>0:</b> Não conforme: Time não conhece o canal de denúncia e não tem visibilidade na unidade<br><b>3:</b> Conformidade total: Time conhece o canal de denúncia e tem visibilidade na unidade</div><div class="score-grid" id="sg-gest_canal"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gest_canal" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-gest_agenda"><div class="process-title" onclick="toggleCard('gest_agenda')"><div><div class="process-name">Agenda da Rotina</div><div class="process-pts">Peso: <strong>30 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gest_agenda">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A liderança da unidade segue a agenda de rotina?</div><div class="rule-box"><b>0:</b> Não conforme: Não realiza a agenda e/ou não sabe os indicadores da sua área/unidade<br><b>1:</b> Conformidade parcial: Agenda realizada com falhas de frequência, mas todos colaboradores sabem os indicadores<br><b>3:</b> Conformidade total: Agenda realizada conforme padrão e todos colaboradores sabem os indicadores</div><div class="score-grid" id="sg-gest_agenda"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gest_agenda" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-gest_reunioes"><div class="process-title" onclick="toggleCard('gest_reunioes')"><div><div class="process-name">Reuniões Operacionais</div><div class="process-pts">Peso: <strong>20 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gest_reunioes">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A liderança realiza reuniões com o time conforme cronograma da agenda de rotina?</div><div class="rule-box"><b>0:</b> Não conforme: Não realiza as reuniões com o time da unidade<br><b>1:</b> Conformidade parcial: Realiza Batidão Pré/Pós, Planejamento Diário e Reunião de Interesse Genuíno, porém não realiza a Reunião Regional Semanal e a Reunião de Resultados Mensal<br><b>3:</b> Conformidade total: Realiza todas as reuniões incluindo Regional Semanal e Resultados Mensal</div><div class="score-grid" id="sg-gest_reunioes"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gest_reunioes" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-gest_pop"><div class="process-title" onclick="toggleCard('gest_pop')"><div><div class="process-name">POP</div><div class="process-pts">Peso: <strong>15 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gest_pop">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>Os colaboradores conhecem o POP e executam suas atividades conforme descrito no procedimento?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% de aderência à pergunta</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-gest_pop" placeholder="Ex: 80%" oninput="calcDelta('gest_pop')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-gest_pop" placeholder="Ex: 94%" oninput="calcDelta('gest_pop')"></div><div class="ind-field"><label>Delta</label><div id="delta-gest_pop" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Ausência de conhecimento sobre o POP e não executa conforme descrito<br><b>1:</b> Conformidade parcial: Conhece o POP, porém não executa as atividades conforme descrito<br><b>3:</b> Conformidade total: Colaboradores conhecem e executam as atividades conforme o POP</div><div class="score-grid" id="sg-gest_pop"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gest_pop" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+</div><div class="pane" id="pane-gente"><div class="pilar-header"><h2>Pilar Gente</h2><div class="pilar-totals"><div class="total-box"><div class="val" id="score-gente">0</div><div class="lbl">Pontos</div></div><div class="total-box"><div class="val" id="pct-gente">0%</div><div class="lbl">Atingimento</div></div><div class="total-box"><div class="val">100</div><div class="lbl">Máximo</div></div></div></div><div class="process-card" id="card-gen_trein"><div class="process-title" onclick="toggleCard('gen_trein')"><div><div class="process-name">Treinamentos</div><div class="process-pts">Peso: <strong>25 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gen_trein">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade garante a realização da trilha de treinamentos definida pela empresa e acompanha a evolução dos colaboradores?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% de realização da trilha Galena</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-gen_trein" placeholder="Ex: 80%" oninput="calcDelta('gen_trein')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-gen_trein" placeholder="Ex: 94%" oninput="calcDelta('gen_trein')"></div><div class="ind-field"><label>Delta</label><div id="delta-gen_trein" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não bate a meta da trilha da Galena e time não participou do treinamento de vendas<br><b>1:</b> Conformidade parcial: Unidade bate 80% da meta e time participou do treinamento de vendas<br><b>3:</b> Conformidade total: Unidade bate 100% da meta e time participou do treinamento de vendas</div><div class="score-grid" id="sg-gen_trein"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gen_trein" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-gen_cultura"><div class="process-title" onclick="toggleCard('gen_cultura')"><div><div class="process-name">Cultura</div><div class="process-pts">Peso: <strong>20 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gen_cultura">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade acompanha o indicador de clima organizacional (e-NPS) e realiza ações para melhoria da satisfação dos colaboradores?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>e-NPS</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-gen_cultura" placeholder="Ex: 80%" oninput="calcDelta('gen_cultura')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-gen_cultura" placeholder="Ex: 94%" oninput="calcDelta('gen_cultura')"></div><div class="ind-field"><label>Delta</label><div id="delta-gen_cultura" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não bateu meta de eNPS e time não sabe valores/missão<br><b>1:</b> Conformidade parcial: Unidade bateu meta de eNPS, porém time não sabe valores/missão<br><b>3:</b> Conformidade total: Unidade bateu meta de eNPS e time sabe valores, missão e recebeu feedback</div><div class="score-grid" id="sg-gen_cultura"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gen_cultura" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-gen_jornada"><div class="process-title" onclick="toggleCard('gen_jornada')"><div><div class="process-name">Controle de Jornada e Planejamento de Férias</div><div class="process-pts">Peso: <strong>25 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gen_jornada">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade tem uma boa gestão de férias e banco de horas?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>Banco de horas</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-gen_jornada" placeholder="Ex: 80%" oninput="calcDelta('gen_jornada')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-gen_jornada" placeholder="Ex: 94%" oninput="calcDelta('gen_jornada')"></div><div class="ind-field"><label>Delta</label><div id="delta-gen_jornada" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Liderança não tem controle do banco de horas e/ou não tem planejamento de férias<br><b>1:</b> Conformidade parcial: Existe planejamento de férias e acompanhamento de BH, porém não atingindo meta<br><b>3:</b> Conformidade total: Planejamento de férias alinhado, BH acompanhado com plano e atingindo meta</div><div class="score-grid" id="sg-gen_jornada"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gen_jornada" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-gen_abs"><div class="process-title" onclick="toggleCard('gen_abs')"><div><div class="process-name">Absenteísmo</div><div class="process-pts">Peso: <strong>15 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gen_abs">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A Liderança possui o acompanhamento do absenteísmo dos colaboradores?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>Absenteísmo</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-gen_abs" placeholder="Ex: 80%" oninput="calcDelta('gen_abs')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-gen_abs" placeholder="Ex: 94%" oninput="calcDelta('gen_abs')"></div><div class="ind-field"><label>Delta</label><div id="delta-gen_abs" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não atinge meta de ABS, não acompanha e não tem plano de ação<br><b>1:</b> Conformidade parcial: Unidade não atinge meta de ABS, mas acompanha e tem plano de ação<br><b>3:</b> Conformidade total: Unidade atinge meta de ABS, acompanha e tem plano de ação</div><div class="score-grid" id="sg-gen_abs"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gen_abs" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-gen_onboard"><div class="process-title" onclick="toggleCard('gen_onboard')"><div><div class="process-name">Onboarding (3 meses)</div><div class="process-pts">Peso: <strong>15 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-gen_onboard">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A Unidade garante a execução e acompanha todo o processo de onboarding dos novos funcionários contratados?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% Ating. RV Novos Funcionários</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-gen_onboard" placeholder="Ex: 80%" oninput="calcDelta('gen_onboard')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-gen_onboard" placeholder="Ex: 94%" oninput="calcDelta('gen_onboard')"></div><div class="ind-field"><label>Delta</label><div id="delta-gen_onboard" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Todos colaboradores com RV abaixo de 95% e não realiza 5 passos/avaliação<br><b>1:</b> Conformidade parcial: Colaboradores com RV abaixo de 95%, mas realizou feedbacks e avaliação<br><b>3:</b> Conformidade total: Todos colaboradores com RV acima de 95%, feedbacks e avaliação realizados</div><div class="score-grid" id="sg-gen_onboard"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-gen_onboard" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+</div><div class="pane" id="pane-operacoes"><div class="pilar-header"><h2>Pilar Operações</h2><div class="pilar-totals"><div class="total-box"><div class="val" id="score-operacoes">0</div><div class="lbl">Pontos</div></div><div class="total-box"><div class="val" id="pct-operacoes">0%</div><div class="lbl">Atingimento</div></div><div class="total-box"><div class="val">150</div><div class="lbl">Máximo</div></div></div></div><div class="process-card" id="card-op_manut"><div class="process-title" onclick="toggleCard('op_manut')"><div><div class="process-name">Manutenção Corretiva de Estrutura e Equipamentos</div><div class="process-pts">Peso: <strong>20 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_manut">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>Os chamados de manutenção de estrutura e equipamentos são abertos assim que identificado um problema? A unidade tem controle e acompanha o andamento dos chamados abertos?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% Chamados de Manutenção Fechados no Prazo</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_manut" placeholder="Ex: 80%" oninput="calcDelta('op_manut')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_manut" placeholder="Ex: 94%" oninput="calcDelta('op_manut')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_manut" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não bate meta e existe situação impactando atendimento sem chamado aberto<br><b>1:</b> Conformidade parcial: Unidade não bate meta, porém não apresenta problemas que causam impacto<br><b>3:</b> Conformidade total: Unidade atinge meta e não apresenta problemas de impacto</div><div class="score-grid" id="sg-op_manut"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_manut" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-op_concil"><div class="process-title" onclick="toggleCard('op_concil')"><div><div class="process-name">Conciliação</div><div class="process-pts">Peso: <strong>15 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_concil">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>Os coordenadores seguem os processos de conciliação de caixa e não apresentam diferenças acima da meta?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>Diferença de caixa</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_concil" placeholder="Ex: 80%" oninput="calcDelta('op_concil')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_concil" placeholder="Ex: 94%" oninput="calcDelta('op_concil')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_concil" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Virou mês com pendência de conciliação e/ou perda acima de R$500<br><b>1:</b> Conformidade parcial: Mais de 70% dos dias sem pendências, porém perda entre R$50 e R$500<br><b>3:</b> Conformidade total: Mais de 70% dos dias sem pendências e perda abaixo de R$50</div><div class="score-grid" id="sg-op_concil"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_concil" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-op_compras"><div class="process-title" onclick="toggleCard('op_compras')"><div><div class="process-name">Compras</div><div class="process-pts">Peso: <strong>10 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_compras">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade realiza planejamento de compras, respeita os prazos definidos e garante o correto registro fiscal dos itens adquiridos?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>Aderência Orçamentária dos Pacotes</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_compras" placeholder="Ex: 80%" oninput="calcDelta('op_compras')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_compras" placeholder="Ex: 94%" oninput="calcDelta('op_compras')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_compras" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Sem planejamento de compras ou pedidos sistematicamente fora do prazo sem justificativa<br><b>1:</b> Conformidade parcial: Planejamento realizado, pedidos enviados mas com inconsistências no registro fiscal<br><b>3:</b> Conformidade total: Planejamento realizado, prazos respeitados e registro fiscal correto</div><div class="score-grid" id="sg-op_compras"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_compras" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-op_estoque"><div class="process-title" onclick="toggleCard('op_estoque')"><div><div class="process-name">Controle de Estoque</div><div class="process-pts">Peso: <strong>10 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_estoque">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade realiza controle eficaz do estoque, garantindo aderência entre estoque físico e sistema?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>Conferência dos itens físicos x sistema</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_estoque" placeholder="Ex: 80%" oninput="calcDelta('op_estoque')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_estoque" placeholder="Ex: 94%" oninput="calcDelta('op_estoque')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_estoque" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Sem acompanhamento e visibilidade sobre o estoque, não bate meta<br><b>1:</b> Conformidade parcial: Com acompanhamento, não bate meta, mas tem plano de ação<br><b>3:</b> Conformidade total: Com acompanhamento, bate meta e aplica fluxo de armazenamento</div><div class="score-grid" id="sg-op_estoque"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_estoque" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-op_bloqueio"><div class="process-title" onclick="toggleCard('op_bloqueio')"><div><div class="process-name">Gestão de Bloqueio Médico</div><div class="process-pts">Peso: <strong>20 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_bloqueio">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade realiza o acompanhamento da agenda médica, confirmação e possível bloqueio? Em caso de bloqueio tenta substituto e aciona o time do núcleo?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% Indisponibilidade - Bloqueio Médico</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_bloqueio" placeholder="Ex: 80%" oninput="calcDelta('op_bloqueio')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_bloqueio" placeholder="Ex: 94%" oninput="calcDelta('op_bloqueio')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_bloqueio" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não atinge meta de Bloqueio médico e não tem plano de ação<br><b>1:</b> Conformidade parcial: Unidade não atinge meta, porém tem plano de ação<br><b>3:</b> Conformidade total: Unidade atinge a meta de Bloqueio médico</div><div class="score-grid" id="sg-op_bloqueio"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_bloqueio" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-op_ouvidoria"><div class="process-title" onclick="toggleCard('op_ouvidoria')"><div><div class="process-name">Ouvidoria</div><div class="process-pts">Peso: <strong>15 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_ouvidoria">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade tem visibilidade das reclamações realizadas e promove a solução dos mesmos no prazo? (Procon, Reclame Aqui, SAC, etc)</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span># Tickets de Clientes</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_ouvidoria" placeholder="Ex: 80%" oninput="calcDelta('op_ouvidoria')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_ouvidoria" placeholder="Ex: 94%" oninput="calcDelta('op_ouvidoria')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_ouvidoria" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não tem visibilidade das reclamações e/ou não atinge meta de tickets fechados no prazo<br><b>1:</b> Conformidade parcial: Tem visibilidade e atinge meta de fechamento no prazo, porém não atinge meta de tickets abertos<br><b>3:</b> Conformidade total: Tem visibilidade e atinge ambas as metas</div><div class="score-grid" id="sg-op_ouvidoria"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_ouvidoria" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-op_nps"><div class="process-title" onclick="toggleCard('op_nps')"><div><div class="process-name">NPS</div><div class="process-pts">Peso: <strong>20 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_nps">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>É realizada pesquisa de NPS? Há um controle desse indicador? A unidade atinge a meta?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>NPS</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_nps" placeholder="Ex: 80%" oninput="calcDelta('op_nps')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_nps" placeholder="Ex: 94%" oninput="calcDelta('op_nps')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_nps" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não atinge meta de NPS, não acompanha detratores e não tem plano de ação<br><b>1:</b> Conformidade parcial: Unidade não atinge meta, porém acompanha detratores e tem plano de ação<br><b>3:</b> Conformidade total: Unidade atinge meta de NPS e acompanha detratores</div><div class="score-grid" id="sg-op_nps"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_nps" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-op_aquis"><div class="process-title" onclick="toggleCard('op_aquis')"><div><div class="process-name">Aquisição Médica</div><div class="process-pts">Peso: <strong>20 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_aquis">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade atinge a meta de aquisição médica e mantém aderência ao mix estratégico? Os colaboradores conhecem o programa de indicação médica?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% de aderência ao mix</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_aquis" placeholder="Ex: 80%" oninput="calcDelta('op_aquis')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_aquis" placeholder="Ex: 94%" oninput="calcDelta('op_aquis')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_aquis" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não atinge meta de aquisição e não acompanha indicadores<br><b>1:</b> Conformidade parcial: Unidade não atinge meta, mas acompanha e tem plano de ação<br><b>3:</b> Conformidade total: Unidade atinge meta e mantém aderência ao mix estratégico</div><div class="score-grid" id="sg-op_aquis"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_aquis" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-op_prod"><div class="process-title" onclick="toggleCard('op_prod')"><div><div class="process-name">Produtividade Médica</div><div class="process-pts">Peso: <strong>10 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_prod">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade acompanha a ocupação médica geral e garante evolução da produtividade nos três primeiros meses de onboarding do médico?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% ocupação médica / % de ocupação inicial</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_prod" placeholder="Ex: 80%" oninput="calcDelta('op_prod')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_prod" placeholder="Ex: 94%" oninput="calcDelta('op_prod')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_prod" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Sem acompanhamento da ocupação médica<br><b>1:</b> Conformidade parcial: Acompanha mas não atinge meta de ocupação<br><b>3:</b> Conformidade total: Acompanha e atinge meta de ocupação médica</div><div class="score-grid" id="sg-op_prod"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_prod" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-op_compliance"><div class="process-title" onclick="toggleCard('op_compliance')"><div><div class="process-name">Checklist Compliance</div><div class="process-pts">Peso: <strong>10 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-op_compliance">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A Unidade conhece e atende as exigências presentes no checklist de compliance de regulação trabalhista, estrutural, documental e de segurança?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>Aderência Checklist de Compliance</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-op_compliance" placeholder="Ex: 80%" oninput="calcDelta('op_compliance')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-op_compliance" placeholder="Ex: 94%" oninput="calcDelta('op_compliance')"></div><div class="ind-field"><label>Delta</label><div id="delta-op_compliance" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Não atinge meta de 80% de aderência e não tem plano de ação<br><b>1:</b> Conformidade parcial: Não atinge meta de 80% mas tem plano de ação<br><b>3:</b> Conformidade total: Atinge meta de 80% e tem plano de ação para não conformidades</div><div class="score-grid" id="sg-op_compliance"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-op_compliance" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+</div><div class="pane" id="pane-vendas"><div class="pilar-header"><h2>Pilar Vendas</h2><div class="pilar-totals"><div class="total-box"><div class="val" id="score-vendas">0</div><div class="lbl">Pontos</div></div><div class="total-box"><div class="val" id="pct-vendas">0%</div><div class="lbl">Atingimento</div></div><div class="total-box"><div class="val">150</div><div class="lbl">Máximo</div></div></div></div><div class="process-card" id="card-vend_5p_rec"><div class="process-title" onclick="toggleCard('vend_5p_rec')"><div><div class="process-name">5 Passos de Vendas – Recepção</div><div class="process-pts">Peso: <strong>40 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-vend_5p_rec">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>Os colaboradores de recepção e pré-atendimento estão treinados e executam os 5 passos de vendas?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% Aderência aos 5 Passos - Recepção</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-vend_5p_rec" placeholder="Ex: 80%" oninput="calcDelta('vend_5p_rec')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-vend_5p_rec" placeholder="Ex: 94%" oninput="calcDelta('vend_5p_rec')"></div><div class="ind-field"><label>Delta</label><div id="delta-vend_5p_rec" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Colaboradores sem treinamento ou com atingimento abaixo de 60%<br><b>1:</b> Conformidade parcial: Todos colaboradores acima de 60% e liderança realiza acompanhamento/feedback<br><b>3:</b> Conformidade total: Todos colaboradores acima de 90% e liderança realiza acompanhamento e feedback</div><div class="score-grid" id="sg-vend_5p_rec"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-vend_5p_rec" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-vend_sv"><div class="process-title" onclick="toggleCard('vend_sv')"><div><div class="process-name">Super Vida</div><div class="process-pts">Peso: <strong>25 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-vend_sv">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade acompanha e atinge a meta de novas assinaturas do SuperVida?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>Novas Assinaturas</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-vend_sv" placeholder="Ex: 80%" oninput="calcDelta('vend_sv')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-vend_sv" placeholder="Ex: 94%" oninput="calcDelta('vend_sv')"></div><div class="ind-field"><label>Delta</label><div id="delta-vend_sv" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Sem acompanhamento por colaborador ou colaboradores abaixo de 80% da meta<br><b>1:</b> Conformidade parcial: Todos acima de 80% da meta e bate meta de Novos Assinantes<br><b>3:</b> Conformidade total: Todos acima de 80% e bate metas de Novos Assinantes e Peso Black</div><div class="score-grid" id="sg-vend_sv"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-vend_sv" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-vend_5p_pos"><div class="process-title" onclick="toggleCard('vend_5p_pos')"><div><div class="process-name">5 Passos de Vendas – Pós Exames</div><div class="process-pts">Peso: <strong>40 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-vend_5p_pos">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>Os colaboradores de pós-atendimento estão treinados e executam os 5 passos de vendas?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% Aderência aos 5 Passos - Pós Exames</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-vend_5p_pos" placeholder="Ex: 80%" oninput="calcDelta('vend_5p_pos')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-vend_5p_pos" placeholder="Ex: 94%" oninput="calcDelta('vend_5p_pos')"></div><div class="ind-field"><label>Delta</label><div id="delta-vend_5p_pos" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Colaboradores sem treinamento ou com atingimento abaixo de 60%<br><b>1:</b> Conformidade parcial: Todos colaboradores acima de 60% e liderança realiza acompanhamento/feedback<br><b>3:</b> Conformidade total: Todos colaboradores acima de 90% e liderança realiza acompanhamento e feedback</div><div class="score-grid" id="sg-vend_5p_pos"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-vend_5p_pos" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-vend_gsv"><div class="process-title" onclick="toggleCard('vend_gsv')"><div><div class="process-name">GSV Exames</div><div class="process-pts">Peso: <strong>25 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-vend_gsv">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>A unidade tem os acompanhamentos e atinge a meta de GSV Exames?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>GSV Exames</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-vend_gsv" placeholder="Ex: 80%" oninput="calcDelta('vend_gsv')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-vend_gsv" placeholder="Ex: 94%" oninput="calcDelta('vend_gsv')"></div><div class="ind-field"><label>Delta</label><div id="delta-vend_gsv" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não tem acompanhamento necessário<br><b>1:</b> Conformidade parcial: Possui acompanhamento, atingimento entre 95% e 100% da meta<br><b>3:</b> Conformidade total: Possui acompanhamento e atinge a meta</div><div class="score-grid" id="sg-vend_gsv"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-vend_gsv" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+<div class="process-card" id="card-vend_rv"><div class="process-title" onclick="toggleCard('vend_rv')"><div><div class="process-name">RV</div><div class="process-pts">Peso: <strong>20 pts</strong> &nbsp;|&nbsp; Pontuação atual: <strong id="pts-vend_rv">---</strong></div></div><span class="toggle-icon">&#9660;</span></div><div class="process-body"><div class="pergunta-box"><span class="perg-icon">?</span>Além de todos colaboradores conhecerem e acompanharem a RV do mês, mais de 75% deles recebem RV?</div><div class="ind-row"><div class="ind-label"><span class="ind-tag">Indicador</span>% Funcionários com pagamento de RV</div><div class="ind-fields"><div class="ind-field"><label>Meta</label><input type="text" id="meta-vend_rv" placeholder="Ex: 80%" oninput="calcDelta('vend_rv')"></div><div class="ind-field"><label>Real</label><input type="text" id="real-vend_rv" placeholder="Ex: 94%" oninput="calcDelta('vend_rv')"></div><div class="ind-field"><label>Delta</label><div id="delta-vend_rv" class="delta-val">&#8212;</div></div></div></div><div class="rule-box"><b>0:</b> Não conforme: Unidade não segue processo de RV<br><b>1:</b> Conformidade parcial: Todos sabem, porém menos de 75% receberam RV<br><b>3:</b> Conformidade total: Todos sabem e mais de 75% dos colaboradores receberam RV</div><div class="score-grid" id="sg-vend_rv"></div><div class="obs-field"><label>Observações / Evidências</label><textarea id="obs-vend_rv" placeholder="Pontos observados, evidências coletadas..."></textarea></div></div></div>
+</div><div class="pane" id="pane-resultados"><div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:20px;margin-bottom:20px;"><h2 style="color:var(--blue);margin-bottom:16px;font-size:16px;">Categoria Resultados</h2><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:var(--blue);color:#fff;"><th style="padding:10px 12px;text-align:left;font-size:12px;text-transform:uppercase;">Indicador</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Direção</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Máx.</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Meta</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Real</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Diferença</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Pontos</th></tr></thead><tbody><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">GSV Consultas</td><td style="padding:10px 12px;text-align:center;"><span style="background:#e8f5e9;color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">maior melhor &#8593;</span></td><td style="padding:10px 12px;text-align:center;color:var(--muted);">100</td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rmeta-res_gsvconsultas" placeholder="Meta" oninput="calcRes('res_gsvconsultas')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rreal-res_gsvconsultas" placeholder="Real" oninput="calcRes('res_gsvconsultas')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><span id="rdif-res_gsvconsultas" style="font-weight:600;">&#8212;</span></td><td style="padding:10px 12px;text-align:center;"><span id="rpts-res_gsvconsultas" class="res-pts-badge">&#8212;</span></td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">GSV Exames</td><td style="padding:10px 12px;text-align:center;"><span style="background:#e8f5e9;color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">maior melhor &#8593;</span></td><td style="padding:10px 12px;text-align:center;color:var(--muted);">100</td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rmeta-res_gsvexames" placeholder="Meta" oninput="calcRes('res_gsvexames')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rreal-res_gsvexames" placeholder="Real" oninput="calcRes('res_gsvexames')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><span id="rdif-res_gsvexames" style="font-weight:600;">&#8212;</span></td><td style="padding:10px 12px;text-align:center;"><span id="rpts-res_gsvexames" class="res-pts-badge">&#8212;</span></td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">GSV Diagnóstico</td><td style="padding:10px 12px;text-align:center;"><span style="background:#e8f5e9;color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">maior melhor &#8593;</span></td><td style="padding:10px 12px;text-align:center;color:var(--muted);">100</td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rmeta-res_gsvdiag" placeholder="Meta" oninput="calcRes('res_gsvdiag')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rreal-res_gsvdiag" placeholder="Real" oninput="calcRes('res_gsvdiag')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><span id="rdif-res_gsvdiag" style="font-weight:600;">&#8212;</span></td><td style="padding:10px 12px;text-align:center;"><span id="rpts-res_gsvdiag" class="res-pts-badge">&#8212;</span></td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">GSV Laboratório</td><td style="padding:10px 12px;text-align:center;"><span style="background:#e8f5e9;color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">maior melhor &#8593;</span></td><td style="padding:10px 12px;text-align:center;color:var(--muted);">100</td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rmeta-res_gsvlab" placeholder="Meta" oninput="calcRes('res_gsvlab')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rreal-res_gsvlab" placeholder="Real" oninput="calcRes('res_gsvlab')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><span id="rdif-res_gsvlab" style="font-weight:600;">&#8212;</span></td><td style="padding:10px 12px;text-align:center;"><span id="rpts-res_gsvlab" class="res-pts-badge">&#8212;</span></td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">Vendas SuperVida</td><td style="padding:10px 12px;text-align:center;"><span style="background:#e8f5e9;color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">maior melhor &#8593;</span></td><td style="padding:10px 12px;text-align:center;color:var(--muted);">100</td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rmeta-res_sv" placeholder="Meta" oninput="calcRes('res_sv')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rreal-res_sv" placeholder="Real" oninput="calcRes('res_sv')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><span id="rdif-res_sv" style="font-weight:600;">&#8212;</span></td><td style="padding:10px 12px;text-align:center;"><span id="rpts-res_sv" class="res-pts-badge">&#8212;</span></td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">TME</td><td style="padding:10px 12px;text-align:center;"><span style="background:#fff3e0;color:#e65100;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">menor melhor &#8595;</span></td><td style="padding:10px 12px;text-align:center;color:var(--muted);">100</td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rmeta-res_tme" placeholder="Ex: 00:08:00" oninput="calcRes('res_tme')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><input type="text" id="rreal-res_tme" placeholder="Ex: 00:07:30" oninput="calcRes('res_tme')" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;width:100px;text-align:center;font-size:13px;"></td><td style="padding:10px 12px;text-align:center;"><span id="rdif-res_tme" style="font-weight:600;">&#8212;</span></td><td style="padding:10px 12px;text-align:center;"><span id="rpts-res_tme" class="res-pts-badge">&#8212;</span></td></tr><tr style="background:var(--gray);border-top:2px solid var(--border);"><td colspan="2" style="padding:10px 12px;font-weight:700;">Total Categoria Resultado</td><td style="padding:10px 12px;text-align:center;font-weight:700;">600</td><td colspan="2" style="padding:10px 12px;text-align:center;color:var(--muted);">&#8212;</td><td style="padding:10px 12px;text-align:center;color:var(--muted);">&#8212;</td><td style="padding:10px 12px;text-align:center;font-weight:800;font-size:15px;color:var(--blue);" id="res-grand-pts">&#8212;</td></tr></tbody></table></div><p style="margin-top:10px;font-size:11px;color:var(--muted);">Pontuação binária: 100 pts se meta atingida, 0 pts se não atingida. TME: menor é melhor.</p></div><div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:20px;"><h2 style="color:var(--blue);font-size:16px;margin-bottom:16px;">Categoria Meios</h2><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:var(--blue);color:#fff;"><th style="padding:10px 12px;text-align:left;font-size:12px;text-transform:uppercase;">Pilar</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Máximo</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Meta Qualif.</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Aderência</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Nível</th><th style="padding:10px 12px;text-align:center;font-size:12px;text-transform:uppercase;">Pontos</th></tr></thead><tbody><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">Gestão</td><td style="padding:10px 12px;text-align:center;color:var(--muted);">100</td><td style="padding:10px 12px;text-align:center;">65%</td><td style="padding:10px 12px;text-align:center;font-weight:700;" id="cm-pct-gestao">&#8212;</td><td style="padding:10px 12px;text-align:center;" id="cm-nivel-gestao">&#8212;</td><td style="padding:10px 12px;text-align:center;font-weight:700;" id="cm-pts-gestao">&#8212;</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">Gente</td><td style="padding:10px 12px;text-align:center;color:var(--muted);">100</td><td style="padding:10px 12px;text-align:center;">65%</td><td style="padding:10px 12px;text-align:center;font-weight:700;" id="cm-pct-gente">&#8212;</td><td style="padding:10px 12px;text-align:center;" id="cm-nivel-gente">&#8212;</td><td style="padding:10px 12px;text-align:center;font-weight:700;" id="cm-pts-gente">&#8212;</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">Operações</td><td style="padding:10px 12px;text-align:center;color:var(--muted);">150</td><td style="padding:10px 12px;text-align:center;">65%</td><td style="padding:10px 12px;text-align:center;font-weight:700;" id="cm-pct-operacoes">&#8212;</td><td style="padding:10px 12px;text-align:center;" id="cm-nivel-operacoes">&#8212;</td><td style="padding:10px 12px;text-align:center;font-weight:700;" id="cm-pts-operacoes">&#8212;</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 12px;font-weight:600;">Vendas</td><td style="padding:10px 12px;text-align:center;color:var(--muted);">150</td><td style="padding:10px 12px;text-align:center;">65%</td><td style="padding:10px 12px;text-align:center;font-weight:700;" id="cm-pct-vendas">&#8212;</td><td style="padding:10px 12px;text-align:center;" id="cm-nivel-vendas">&#8212;</td><td style="padding:10px 12px;text-align:center;font-weight:700;" id="cm-pts-vendas">&#8212;</td></tr><tr style="background:var(--gray);border-top:2px solid var(--border);"><td style="padding:10px 12px;font-weight:700;">Total Categoria Meios</td><td style="padding:10px 12px;text-align:center;font-weight:700;">500</td><td colspan="3" style="padding:10px 12px;text-align:center;color:var(--muted);">&#8212;</td><td style="padding:10px 12px;text-align:center;font-weight:800;font-size:15px;color:var(--blue);" id="cm-total-pts">&#8212;</td></tr></tbody></table></div><p style="margin-top:10px;font-size:11px;color:var(--muted);">Pilares que atingem 65% recebem os pontos proporcionais. Calculado automaticamente a partir das notas preenchidas.</p></div></div><div class="pane" id="pane-resumo"><div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:20px;margin-bottom:20px;"><h2 style="color:var(--blue);margin-bottom:16px;font-size:16px;">Resumo Geral</h2><div class="results-grid"><div class="result-card"><h3>Gestão</h3><div class="result-pct" id="r-pct-gestao">---</div><div class="result-pts" id="r-pts-gestao">--- / 100 pts</div><div class="result-status" id="r-status-gestao">---</div><div class="prog-bar"><div class="prog-fill" id="r-bar-gestao" style="width:0%"></div></div></div><div class="result-card"><h3>Gente</h3><div class="result-pct" id="r-pct-gente">---</div><div class="result-pts" id="r-pts-gente">--- / 100 pts</div><div class="result-status" id="r-status-gente">---</div><div class="prog-bar"><div class="prog-fill" id="r-bar-gente" style="width:0%"></div></div></div><div class="result-card"><h3>Operações</h3><div class="result-pct" id="r-pct-operacoes">---</div><div class="result-pts" id="r-pts-operacoes">--- / 150 pts</div><div class="result-status" id="r-status-operacoes">---</div><div class="prog-bar"><div class="prog-fill" id="r-bar-operacoes" style="width:0%"></div></div></div><div class="result-card"><h3>Vendas</h3><div class="result-pct" id="r-pct-vendas">---</div><div class="result-pts" id="r-pts-vendas">--- / 150 pts</div><div class="result-status" id="r-status-vendas">---</div><div class="prog-bar"><div class="prog-fill" id="r-bar-vendas" style="width:0%"></div></div></div></div><div style="text-align:center;margin-top:20px;padding:20px;background:var(--gray);border-radius:8px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Atingimento Geral (Meios)</div><div style="font-size:48px;font-weight:900;color:var(--blue)" id="r-total-pct">---</div><div style="font-size:13px;color:var(--muted)" id="r-total-pts">--- / 500 pts | Meta qualificação: 65%</div><div class="result-status" id="r-total-status" style="margin-top:8px;">---</div></div></div><div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:20px;"><h3 style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:14px;">Processos com Nota 0</h3><div id="zero-list" style="font-size:13px;color:var(--muted);">Selecione um papel para visualizar.</div></div></div><div class="pane" id="pane-plano"><div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:20px;"><h2 style="color:var(--blue);margin-bottom:16px;font-size:16px;">Plano de Ação</h2><table class="plano-table"><thead><tr><th>Unidade</th><th>Pilar</th><th>Processo / Ponto analisado</th><th>Ação</th><th>Responsável</th><th>Data</th><th>Status</th><th></th></tr></thead><tbody id="plano-body"></tbody></table><button class="btn-add-row" onclick="addPlanoRow()">+ Adicionar linha</button></div></div>
+</div>
+<div class="export-bar">
+  <button class="btn btn-secondary" onclick="saveLocal()">Salvar rascunho</button>
+  <button class="btn btn-secondary" onclick="loadLocal()">Carregar rascunho</button>
+  <button class="btn btn-secondary" onclick="novoMes()">&#128260; Novo M&#234;s</button>
+  <button class="btn btn-primary" onclick="exportJSON()">Exportar JSON</button>
+  <button class="btn btn-green" onclick="window.print()">Imprimir / PDF</button>
+  <button class="btn" style="background:#e65100;color:#fff;" onclick="finalizarEnviar()">&#9993; Enviar</button>
+</div>
+<script>
+const PILARES={"gestao": {"label": "Gestão", "max": 100, "processos": {"gest_5s": {"n": "Gestão do 5S", "w": 25}, "gest_canal": {"n": "Canal de Denúncias", "w": 10}, "gest_agenda": {"n": "Agenda da Rotina", "w": 30}, "gest_reunioes": {"n": "Reuniões Operacionais", "w": 20}, "gest_pop": {"n": "POP", "w": 15}}}, "gente": {"label": "Gente", "max": 100, "processos": {"gen_trein": {"n": "Treinamentos", "w": 25}, "gen_cultura": {"n": "Cultura", "w": 20}, "gen_jornada": {"n": "Controle de Jornada e Planejamento de Férias", "w": 25}, "gen_abs": {"n": "Absenteísmo", "w": 15}, "gen_onboard": {"n": "Onboarding (3 meses)", "w": 15}}}, "operacoes": {"label": "Operações", "max": 150, "processos": {"op_manut": {"n": "Manutenção Corretiva de Estrutura e Equipamentos", "w": 20}, "op_concil": {"n": "Conciliação", "w": 15}, "op_compras": {"n": "Compras", "w": 10}, "op_estoque": {"n": "Controle de Estoque", "w": 10}, "op_bloqueio": {"n": "Gestão de Bloqueio Médico", "w": 20}, "op_ouvidoria": {"n": "Ouvidoria", "w": 15}, "op_nps": {"n": "NPS", "w": 20}, "op_aquis": {"n": "Aquisição Médica", "w": 20}, "op_prod": {"n": "Produtividade Médica", "w": 10}, "op_compliance": {"n": "Checklist Compliance", "w": 10}}}, "vendas": {"label": "Vendas", "max": 150, "processos": {"vend_5p_rec": {"n": "5 Passos de Vendas – Recepção", "w": 40}, "vend_sv": {"n": "Super Vida", "w": 25}, "vend_5p_pos": {"n": "5 Passos de Vendas – Pós Exames", "w": 40}, "vend_gsv": {"n": "GSV Exames", "w": 25}, "vend_rv": {"n": "RV", "w": 20}}}};
+const RESULTADOS=[{"id": "res_gsvconsultas", "n": "GSV Consultas", "max": 100, "dir": "higher"}, {"id": "res_gsvexames", "n": "GSV Exames", "max": 100, "dir": "higher"}, {"id": "res_gsvdiag", "n": "GSV Diagnóstico", "max": 100, "dir": "higher"}, {"id": "res_gsvlab", "n": "GSV Laboratório", "max": 100, "dir": "higher"}, {"id": "res_sv", "n": "Vendas SuperVida", "max": 100, "dir": "higher"}, {"id": "res_tme", "n": "TME", "max": 100, "dir": "lower"}];
+const ROLE_LABELS={"autoavaliacao": "Autoavaliação", "consultoria1": "Consultoria 1", "consultoria2": "Consultoria 2", "auditoria": "Auditoria"};
+
+const scores={};
+let activeRole="";
+function buildScoreGrids(){
+  Object.values(PILARES).forEach(p=>Object.keys(p.processos).forEach(id=>{
+    scores[id]={};
+    const grid=document.getElementById("sg-"+id);
+    if(!grid)return;
+    grid.innerHTML="";
+    Object.entries(ROLE_LABELS).forEach(([role,label])=>{
+      const col=document.createElement("div");
+      col.className="score-col";col.id="col-"+id+"-"+role;
+      col.innerHTML='<label class="col-title">'+label+'</label><div class="score-options">'+[0,1,3].map(v=>'<div class="score-btn" id="btn-'+id+'-'+role+'-'+v+'" onclick="setScore(\''+id+'\',\''+role+'\','+v+')">'+v+'<span>'+(v===0?"Não conf.":v===1?"Parcial":"Total")+'</span></div>').join('')+'</div>';
+      grid.appendChild(col);
+    });
+  }));
+}
+function setScore(id,role,val){
+  scores[id][role]=val;
+  [0,1,3].forEach(v=>{const b=document.getElementById("btn-"+id+"-"+role+"-"+v);if(b)b.className="score-btn"+(v===val?" selected-"+v:"");});
+  recalc();
+}
+function parseNum(s){
+  if(!s||!s.trim())return null;
+  const n=parseFloat(s.toString().replace(/[%,\s]/g,"").replace(",","."));
+  return isNaN(n)?null:n;
+}
+function calcDelta(id){
+  const mEl=document.getElementById("meta-"+id),rEl=document.getElementById("real-"+id),dEl=document.getElementById("delta-"+id);
+  if(!mEl||!rEl||!dEl)return;
+  const meta=parseNum(mEl.value),real=parseNum(rEl.value);
+  if(meta===null||real===null){dEl.textContent="—";dEl.className="delta-val";return;}
+  if(meta===0){dEl.textContent="—";dEl.className="delta-val";return;}
+  const delta=((real-meta)/Math.abs(meta))*100;
+  const txt=(delta>=0?"+":"")+delta.toFixed(1)+"%";
+  dEl.textContent=txt;
+  dEl.className="delta-val "+(delta>=0?"delta-ok":delta>=-10?"delta-warn":"delta-bad");
+}
+function recalc(){
+  let grandTotal=0,grandMax=0;
+  Object.entries(PILARES).forEach(([pid,pilar])=>{
+    let total=0;
+    Object.entries(pilar.processos).forEach(([id,proc])=>{
+      const v=activeRole&&scores[id]&&scores[id][activeRole]!==undefined?scores[id][activeRole]:null;
+      const pts=v!==null?(v/3)*proc.w:0;
+      total+=pts;
+      const el=document.getElementById("pts-"+id);
+      if(el)el.textContent=v!==null?pts.toFixed(1)+" pts":"---";
+    });
+    grandTotal+=total;grandMax+=pilar.max;
+    const pct=Math.round((total/pilar.max)*100);
+    const sEl=document.getElementById("score-"+pid);if(sEl)sEl.textContent=total.toFixed(1);
+    const pEl=document.getElementById("pct-"+pid);if(pEl)pEl.textContent=pct+"%";
+    const tEl=document.getElementById("ts-"+pid);if(tEl)tEl.textContent=pct+"%";
+    const rPct=document.getElementById("r-pct-"+pid),rPts=document.getElementById("r-pts-"+pid),rSt=document.getElementById("r-status-"+pid),rBar=document.getElementById("r-bar-"+pid);
+    if(rPct)rPct.textContent=pct+"%";
+    if(rPts)rPts.textContent=total.toFixed(1)+" / "+pilar.max+" pts";
+    if(rSt){rSt.textContent=pct>=65?"Qualificado":total>0?"Abaixo da meta":"---";rSt.className="result-status "+(pct===0?"":pct>=65?"status-ok":"status-warn");}
+    if(rBar){rBar.style.width=Math.min(pct,100)+"%";rBar.style.background=pct>=65?"var(--green)":pct>40?"#f57c00":"var(--red)";}
+  });
+  const gPct=Math.round((grandTotal/grandMax)*100);
+  const tE=document.getElementById("r-total-pct"),tP=document.getElementById("r-total-pts"),tS=document.getElementById("r-total-status");
+  if(tE)tE.textContent=gPct+"%";
+  if(tP)tP.textContent=grandTotal.toFixed(1)+" / "+grandMax+" pts | Meta qualificação: 65%";
+  if(tS){tS.textContent=gPct>=65?"Qualificado":grandTotal>0?"Abaixo da meta":"---";tS.className="result-status "+(grandTotal===0?"":gPct>=65?"status-ok":"status-warn");}
+  updateZeroList();
+  updateCategoriaMeios();
+  updateQualificacao();
+}
+function updateZeroList(){
+  if(!activeRole){const e=document.getElementById("zero-list");if(e)e.textContent="Selecione um papel para visualizar.";return;}
+  const zeroes=[];
+  Object.values(PILARES).forEach(p=>Object.entries(p.processos).forEach(([id,proc])=>{if(scores[id]&&scores[id][activeRole]===0)zeroes.push(proc.n);}));
+  const el=document.getElementById("zero-list");if(!el)return;
+  el.innerHTML=zeroes.length===0?'<span style="color:var(--green)">Nenhum processo com nota 0.</span>':zeroes.map(n=>'<div style="padding:4px 0;border-bottom:1px solid var(--border)">! '+n+'</div>').join("");
+}
+function updateRoleVisibility(){
+  activeRole=document.getElementById("role-select").value;
+  Object.values(PILARES).forEach(p=>Object.keys(p.processos).forEach(id=>{
+    Object.keys(ROLE_LABELS).forEach(role=>{const col=document.getElementById("col-"+id+"-"+role);if(col)col.style.opacity=(!activeRole||role===activeRole)?"1":"0.35";});
+  }));
+  recalc();
+}
+function showTab(name,el){
+  document.querySelectorAll(".pane").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  const pane=document.getElementById("pane-"+name);if(pane)pane.classList.add("active");
+  if(el)el.classList.add("active");
+  if(name==="resumo")recalc();
+}
+function toggleCard(id){const c=document.getElementById("card-"+id);if(c)c.classList.toggle("open");}
+function updateHeader(){
+  const unitEl=document.getElementById("unit-select");
+  const unit=unitEl&&unitEl.selectedIndex>=0?unitEl.options[unitEl.selectedIndex].text:"---";
+  const roleEl=document.getElementById("role-select");
+  const roleTxt=roleEl&&roleEl.selectedIndex>=0?roleEl.options[roleEl.selectedIndex].text:"---";
+  const ev=document.getElementById("evaluator-name").value;
+  const dt=document.getElementById("eval-date").value;
+  const period=document.getElementById("ref-period")?.value||"";
+  document.getElementById("hdr-unit").textContent="Unidade: "+unit;
+  document.getElementById("hdr-role").textContent="Papel: "+roleTxt+(ev?" - "+ev:"");
+  document.getElementById("hdr-date").textContent=period?formatPeriod(period):(dt||new Date().toLocaleDateString("pt-BR"));
+}
+function parseTimeStr(s){
+  if(!s||!s.trim())return null;
+  const parts=s.trim().split(":");
+  if(parts.length===3){const hh=parseInt(parts[0])||0,mm=parseInt(parts[1])||0,ss=parseInt(parts[2])||0;return hh*3600+mm*60+ss;}
+  const n=parseFloat(s.replace(/[%,\s]/g,"").replace(",","."));return isNaN(n)?null:n;
+}
+function calcRes(id){
+  const mRaw=document.getElementById("rmeta-"+id)?document.getElementById("rmeta-"+id).value:"";
+  const rRaw=document.getElementById("rreal-"+id)?document.getElementById("rreal-"+id).value:"";
+  const difEl=document.getElementById("rdif-"+id);
+  const ptsEl=document.getElementById("rpts-"+id);
+  if(!mRaw||!rRaw||!mRaw.trim()||!rRaw.trim()){
+    if(difEl)difEl.textContent="—";
+    if(ptsEl){ptsEl.textContent="—";ptsEl.className="res-pts-badge";}
+    updateResTotals();return;
+  }
+  let meta,real,dif,pts;
+  const res=RESULTADOS.find(r=>r.id===id);
+  const dir=res?res.dir:"higher";
+  if(id==="res_tme"){
+    meta=parseTimeStr(mRaw);real=parseTimeStr(rRaw);
+    if(meta===null||real===null){if(difEl)difEl.textContent="—";if(ptsEl){ptsEl.textContent="—";ptsEl.className="res-pts-badge";}updateResTotals();return;}
+    dif=real-meta;
+    const abs=Math.abs(dif),hh=Math.floor(abs/3600),mm=Math.floor((abs%3600)/60),ss=abs%60;
+    if(difEl)difEl.textContent=(dif>=0?"+":"-")+[hh,mm,ss].map(v=>String(v).padStart(2,"0")).join(":");
+    pts=real<=meta?100:0;
+  }else{
+    meta=parseFloat(mRaw.replace(/[R$%\s]/g,"").replace(",","."));
+    real=parseFloat(rRaw.replace(/[R$%\s]/g,"").replace(",","."));
+    if(isNaN(meta)||isNaN(real)){if(difEl)difEl.textContent="—";if(ptsEl){ptsEl.textContent="—";ptsEl.className="res-pts-badge";}updateResTotals();return;}
+    dif=real-meta;
+    if(difEl)difEl.textContent=(dif>=0?"+":"")+dif.toLocaleString("pt-BR",{maximumFractionDigits:2});
+    pts=dir==="lower"?(real<=meta?100:0):(real>=meta?100:0);
+  }
+  if(ptsEl){ptsEl.textContent=pts;ptsEl.className="res-pts-badge "+(pts===100?"res-pts-ok":"res-pts-bad");}
+  updateResTotals();
+}
+function updateResTotals(){
+  let total=0,count=0,maxTotal=0;
+  RESULTADOS.forEach(r=>{
+    maxTotal+=r.max;
+    const el=document.getElementById("rpts-"+r.id);
+    if(el&&el.textContent!=="—"&&el.textContent!==""){const v=parseInt(el.textContent);if(!isNaN(v)){total+=v;count++;}}
+  });
+  const tEl=document.getElementById("res-grand-pts");
+  const tsEl=document.getElementById("ts-resultados");
+  const pct=count>0?Math.round((total/maxTotal)*100):0;
+  if(tEl)tEl.textContent=count>0?total:"—";
+  if(tsEl)tsEl.textContent=count>0?pct+"%":"---";
+  updateQualificacao();
+}
+function updateCategoriaMeios(){
+  let totalMeios=0;
+  Object.entries(PILARES).forEach(([pid,pilar])=>{
+    const scoreEl=document.getElementById("score-"+pid);if(!scoreEl)return;
+    const pts=parseFloat(scoreEl.textContent)||0;
+    const pct=Math.round((pts/pilar.max)*100);
+    const qualif=pct>=65;
+    const mPts=qualif?pts:0;
+    totalMeios+=mPts;
+    const pctEl=document.getElementById("cm-pct-"+pid);
+    const nvEl=document.getElementById("cm-nivel-"+pid);
+    const mPtsEl=document.getElementById("cm-pts-"+pid);
+    if(pctEl)pctEl.textContent=pct+"%";
+    if(nvEl)nvEl.innerHTML=qualif?'<span style="background:#e8f5e9;color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">Qualificado</span>':'<span style="background:#ffebee;color:var(--red);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">Não Qualificado</span>';
+    if(mPtsEl)mPtsEl.textContent=qualif?mPts.toFixed(1):"0";
+  });
+  const cmEl=document.getElementById("cm-total-pts");if(cmEl)cmEl.textContent=totalMeios.toFixed(1);
+}
+function gatherData(){
+  const obs={},ind={};
+  Object.values(PILARES).forEach(p=>Object.keys(p.processos).forEach(id=>{
+    const e=document.getElementById("obs-"+id);if(e)obs[id]=e.value;
+    const m=document.getElementById("meta-"+id),r=document.getElementById("real-"+id);
+    if(m||r)ind[id]={meta:m?m.value:"",real:r?r.value:""};
+  }));
+  const resInd={};
+  RESULTADOS.forEach(r=>{
+    const m=document.getElementById("rmeta-"+r.id),rv=document.getElementById("rreal-"+r.id);
+    resInd[r.id]={meta:m?m.value:"",real:rv?rv.value:""};
+  });
+  const plano=[];
+  document.querySelectorAll("#plano-body tr").forEach(tr=>{
+    const cells=tr.querySelectorAll("select,input,textarea");
+    if(cells.length>=7)plano.push({unidade:cells[0].value,pilar:cells[1].value,ponto:cells[2].value,acao:cells[3].value,responsavel:cells[4].value,data:cells[5].value,status:cells[6].value});
+  });
+  const unitEl=document.getElementById("unit-select");
+  const period=document.getElementById("ref-period")?.value||"";
+  return {meta:{unit:unitEl?unitEl.value:"",role:document.getElementById("role-select").value,evaluator:document.getElementById("evaluator-name").value,date:document.getElementById("eval-date").value,period,exportedAt:new Date().toISOString()},scores,obs,ind,resInd,photos:photoData,plano};
+}
+function saveLocal(){try{sessionStorage.setItem("avp_ma_draft",JSON.stringify(gatherData()));alert("Rascunho salvo!");}catch(e){alert("Erro: "+e.message);}}
+function loadLocal(){try{const r=sessionStorage.getItem("avp_ma_draft");if(!r){alert("Nenhum rascunho encontrado.");return;}applyData(JSON.parse(r));alert("Rascunho carregado!");}catch(e){alert("Erro: "+e.message);}}
+function applyData(d){
+  if(d.meta){
+    const uEl=document.getElementById("unit-select");if(uEl&&d.meta.unit)uEl.value=d.meta.unit;
+    document.getElementById("role-select").value=d.meta.role||"";
+    document.getElementById("evaluator-name").value=d.meta.evaluator||"";
+    document.getElementById("eval-date").value=d.meta.date||"";
+    const pEl=document.getElementById("ref-period");if(pEl&&d.meta.period)pEl.value=d.meta.period;
+    updateHeader();updateRoleVisibility();
+  }
+  if(d.scores)Object.entries(d.scores).forEach(([id,rs])=>Object.entries(rs).forEach(([role,val])=>{if(val!==undefined&&val!==null)setScore(id,role,val);}));
+  if(d.obs)Object.entries(d.obs).forEach(([id,v])=>{const e=document.getElementById("obs-"+id);if(e)e.value=v;});
+  if(d.ind)Object.entries(d.ind).forEach(([id,v])=>{const m=document.getElementById("meta-"+id),r=document.getElementById("real-"+id);if(m)m.value=v.meta||"";if(r)r.value=v.real||"";calcDelta(id);});
+  if(d.resInd)Object.entries(d.resInd).forEach(([id,v])=>{const m=document.getElementById("rmeta-"+id),r=document.getElementById("rreal-"+id);if(m)m.value=v.meta||"";if(r)r.value=v.real||"";calcRes(id);});
+  if(d.photos)Object.entries(d.photos).forEach(([id,urls])=>{if(!photoData[id])photoData[id]=[];urls.forEach(u=>{photoData[id].push(u);});renderPhotoPreview(id);});
+  recalc();
+}
+function exportJSON(){
+  const d=gatherData();
+  const blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  const unitVal=(d.meta.unit||"unidade").replace(/\s+/g,"_").replace(/[()]/g,"");
+  const per=d.meta.period?d.meta.period:(d.meta.date||"data");
+  a.download="avaliacao_ma_"+unitVal+"_"+per+".json";
+  a.click();URL.revokeObjectURL(url);
+}
+
+// ====== IMPORTAÇÃO DE DADOS ======
+let importedData={};
+function handleImport(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      if(file.name.toLowerCase().endsWith('.json')){importedData=JSON.parse(e.target.result);}
+      else{importedData=parseImportCSV(e.target.result);}
+      const n=Object.keys(importedData).length;
+      const st=document.getElementById('import-status');
+      if(st){st.textContent=n+' unidade(s) carregadas';st.style.color='var(--green)';}
+      tryAutoFill();
+    }catch(err){alert('Erro ao importar: '+err.message);}
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+function parseImportCSV(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+  const result={};
+  lines.slice(1).forEach(line=>{
+    const cols=[];let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){inQ=!inQ;}else if(c===','&&!inQ){cols.push(cur.trim());cur='';}else{cur+=c;}}
+    cols.push(cur.trim());
+    const unidade=cols[0],campo=cols[1],meta=cols[3]||'',real=cols[4]||'';
+    if(!unidade||!campo)return;
+    if(!result[unidade])result[unidade]={};
+    result[unidade][campo]={meta,real};
+  });
+  return result;
+}
+function applyImportedFields(data){
+  Object.entries(data).forEach(([campo,vals])=>{
+    const mEl=document.getElementById('meta-'+campo);
+    const rEl=document.getElementById('real-'+campo);
+    if(mEl&&vals.meta!==''){mEl.value=vals.meta;calcDelta(campo);}
+    if(rEl&&vals.real!==''){rEl.value=vals.real;calcDelta(campo);}
+    const rmEl=document.getElementById('rmeta-'+campo);
+    const rrEl=document.getElementById('rreal-'+campo);
+    if(rmEl&&vals.meta!==''){rmEl.value=vals.meta;calcRes(campo);}
+    if(rrEl&&vals.real!==''){rrEl.value=vals.real;calcRes(campo);}
+  });
+}
+function tryAutoFill(){
+  if(!importedData||!Object.keys(importedData).length)return;
+  const unitEl=document.getElementById('unit-select');if(!unitEl)return;
+  const val=unitEl.value.trim();if(!val)return;
+  let data=importedData[val];
+  if(!data){const k=Object.keys(importedData).find(k=>k.toLowerCase()===val.toLowerCase());if(k)data=importedData[k];}
+  if(data)applyImportedFields(data);
+}
+function downloadTemplate(){
+  const unidades=["Pátio Norte","Cohab I (Elevado)","Cohab II (Terminal)","Turu","Marcus Center","Rua Grande"];
+  const fields=[];
+  Object.entries(PILARES).forEach(([,pilar])=>{
+    Object.entries(pilar.processos).forEach(([id,proc])=>{
+      if(document.getElementById('meta-'+id))fields.push({id,nome:proc.n});
+    });
+  });
+  RESULTADOS.forEach(r=>fields.push({id:r.id,nome:r.n}));
+  let csv='unidade,campo,nome,meta,real\n';
+  unidades.forEach(u=>{fields.forEach(f=>{csv+='"'+u+'",'+f.id+',"'+f.nome.replace(/"/g,'""')+'","",""\n';});});
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='template_peo_maranhao.csv';a.click();URL.revokeObjectURL(url);
+}
+
+function addPlanoRow(){
+  const tbody=document.getElementById('plano-body');if(!tbody)return;
+  const tr=document.createElement('tr');
+  const unitOpts='<option>Centro de Suporte</option><option>Pátio Norte</option><option>Cohab I (Elevado)</option><option>Cohab II (Terminal)</option><option>Turu</option><option>Marcus Center</option><option>Rua Grande</option>';
+  const pilarOpts='<option>Gestão</option><option>Gente</option><option>Operações</option><option>Vendas</option><option>Resultados</option>';
+  tr.innerHTML='<td><select>'+unitOpts+'</select></td><td><select>'+pilarOpts+'</select></td><td><textarea placeholder="Ponto observado..."></textarea></td><td><textarea placeholder="Ação a ser tomada..."></textarea></td><td><input type="text" placeholder="Responsável"></td><td><input type="date"></td><td><select><option>Pendente</option><option>Em andamento</option><option>Concluído</option></select></td><td><button class="btn-del-row" onclick="this.closest(\'tr\').remove()">x</button></td>';
+  tbody.appendChild(tr);
+}
+
+// ====== PERÍODO ======
+function formatPeriod(p){
+  if(!p)return"";
+  const parts=p.split("-");if(parts.length<2)return p;
+  const months=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  return months[parseInt(parts[1])-1]+"/"+parts[0];
+}
+
+// ====== FOTOS ======
+const photoData={};
+const flaggedCases={};
+const planoProcesso={};
+function buildPhotoInputs(){
+  document.querySelectorAll('.process-card').forEach(card=>{
+    const id=card.id.replace('card-','');if(!id)return;
+    photoData[id]=[];
+    const body=card.querySelector('.process-body');if(!body)return;
+    const wrap=document.createElement('div');
+    wrap.className='photo-wrap';wrap.id='photo-wrap-'+id;
+    wrap.innerHTML='<div class="photo-label">&#128247; Fotos / Evidências</div>'
+      +'<label class="photo-btn">+ Anexar foto'
+      +'<input type="file" accept="image/*" multiple style="display:none" onchange="handlePhotoAdd(\''+id+'\',this)">'
+      +'</label>'
+      +'<div class="photo-preview" id="photo-preview-'+id+'"></div>';
+    body.appendChild(wrap);
+  });
+}
+function handlePhotoAdd(id,input){
+  Array.from(input.files).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      if(!photoData[id])photoData[id]=[];
+      photoData[id].push(e.target.result);
+      renderPhotoPreview(id);
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+function renderPhotoPreview(id){
+  const c=document.getElementById('photo-preview-'+id);if(!c)return;
+  c.innerHTML='';
+  (photoData[id]||[]).forEach((url,i)=>{
+    const w=document.createElement('div');w.className='photo-thumb-wrap';
+    w.innerHTML='<img src="'+url+'" class="photo-thumb"><button class="photo-del" onclick="removePhoto(\''+id+'\','+i+')">&#215;</button>';
+    c.appendChild(w);
+  });
+}
+function removePhoto(id,idx){
+  if(photoData[id])photoData[id].splice(idx,1);
+  renderPhotoPreview(id);
+}
+
+// ====== NOVO MÊS ======
+function novoMes(){
+  if(!confirm('Limpar todas as notas, campos e fotos?\n\nUnidade, Papel, Avaliador e Período serão mantidos.'))return;
+  Object.keys(scores).forEach(id=>{
+    Object.keys(scores[id]).forEach(role=>{scores[id][role]=undefined;});
+    document.querySelectorAll('[id^="btn-'+id+'-"]').forEach(b=>b.className="score-btn");
+    const pts=document.getElementById('pts-'+id);if(pts)pts.textContent='---';
+  });
+  document.querySelectorAll('[id^="meta-"],[id^="real-"],[id^="obs-"],[id^="rmeta-"],[id^="rreal-"]').forEach(el=>el.value='');
+  document.querySelectorAll('[id^="delta-"]').forEach(el=>{el.textContent="—";el.className="delta-val";});
+  document.querySelectorAll('[id^="rdif-"],[id^="rpts-"]').forEach(el=>{el.textContent="—";el.className=el.className.replace(/\s*(res-pts-ok|res-pts-bad)/g,'');});
+  Object.keys(photoData).forEach(id=>{photoData[id]=[];renderPhotoPreview(id);});
+  const tbody=document.getElementById('plano-body');if(tbody)tbody.innerHTML='';
+  addPlanoRow();
+  document.getElementById('eval-date').value=new Date().toISOString().slice(0,10);
+  Object.keys(flaggedCases).forEach(function(id){
+    flaggedCases[id]={flagged:false,note:''};
+    var b=document.getElementById('caso-btn-'+id);if(b)b.className='caso-btn';
+    var w=document.getElementById('caso-note-wrap-'+id);if(w)w.className='caso-note-wrap';
+    var t=document.getElementById('caso-note-'+id);if(t)t.value='';
+  });
+  Object.keys(flaggedCases).forEach(function(id){
+    var tb=document.getElementById('plano-proc-body-'+id);if(tb)tb.innerHTML='';
+  });
+  recalc();
+}
+
+// ====== ENVIAR (MA) ======
+function finalizarEnviar(){
+  gerarRelatorio();
+  setTimeout(exportJSON,600);
+  setTimeout(async function(){
+    // Save to Firestore
+    try{
+      var data=buildEvalSaveData();
+      data.evaluatorUid=_currentUser?_currentUser.uid:'';
+      data.submittedAt=firebase.firestore.FieldValue.serverTimestamp();
+      await _db.collection('evaluations').add(data);
+    }catch(e){console.warn('Firestore save error:',e);}
+    if(confirm('Deseja imprimir / salvar como PDF?'))window.print();
+    const opt=confirm('Iniciar nova avaliação?\n\nOK = Nova unidade (limpa tudo)\nCancelar = Mesmo período/unidade (limpa apenas notas)');
+    if(opt){
+      var uEl=document.getElementById('unit-select');if(uEl)uEl.value='';
+      var pEl=document.getElementById('ref-period');if(pEl)pEl.value='';
+      var prEl=document.getElementById('periodo-res');if(prEl)prEl.value='';
+    }
+    novoMes();
+  },1200);
+}
+document.addEventListener("DOMContentLoaded",()=>{
+  buildScoreGrids();
+  buildPhotoInputs();
+  buildFlagInputs();
+  document.getElementById("eval-date").value=new Date().toISOString().slice(0,10);
+  updateHeader();
+  addPlanoRow();
+});
+function updateQualificacao(){
+  var banner=document.getElementById('qualif-banner');
+  if(!banner){
+    banner=document.createElement('div');
+    banner.id='qualif-banner';
+    banner.style.cssText='background:#fff;border-radius:12px;border:2px solid var(--border);padding:22px;margin-top:22px;';
+    banner.innerHTML='<h2 style="color:var(--blue);font-size:15px;font-weight:800;margin:0 0 14px;letter-spacing:.5px;">\u{1F3C1} Resultado da Qualificação</h2>'
+      +'<div id="qualif-meios-detail"></div>'
+      +'<div id="qualif-res-detail" style="margin-top:10px;"></div>'
+      +'<div id="qualif-final" style="text-align:center;margin-top:18px;padding:18px 0;border-radius:8px;font-size:22px;font-weight:900;letter-spacing:1px;">---</div>';
+    var rp=document.getElementById('pane-resumo');
+    if(rp) rp.appendChild(banner);
+  }
+  // ── Meios ──
+  var meiosOk=true;
+  var md='<div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:6px;letter-spacing:.4px;">Categoria Meios — todos os pilares ≥65%</div>';
+  Object.entries(PILARES).forEach(function(e){
+    var pid=e[0],pilar=e[1];
+    var scoreEl=document.getElementById('score-'+pid);
+    var pts=parseFloat((scoreEl&&scoreEl.textContent)||'0')||0;
+    var pct=Math.round((pts/pilar.max)*100);
+    var ok=pct>=65;
+    if(!ok) meiosOk=false;
+    var col=ok?'var(--green)':'var(--red)';
+    var icon=ok?'✓':'✗';
+    md+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);">'
+      +'<span style="font-size:13px;">'+pilar.label+'</span>'
+      +'<span style="color:'+col+';font-weight:700;font-size:13px;">'+icon+' '+pct+'%</span></div>';
+  });
+  document.getElementById('qualif-meios-detail').innerHTML=md;
+  // ── Resultados ──
+  var resIds=typeof RESULTADOS!=='undefined'
+    ?RESULTADOS.map(function(r){return r.id;})
+    :Object.keys(RES_IND);
+  var resCount=0;
+  resIds.forEach(function(id){
+    var el=document.getElementById('rpts-'+id);
+    if(el){var v=parseInt(el.textContent);if(!isNaN(v)&&v>0) resCount++;}
+  });
+  var resTotal=resIds.length;
+  var resOk=resCount>=3;
+  document.getElementById('qualif-res-detail').innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;">'
+    +'<span style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.4px;">Categoria Resultados — mínimo 3 indicadores</span>'
+    +'<span style="color:'+(resOk?'var(--green)':'var(--red)')+';font-weight:700;font-size:13px;">'+(resOk?'✓':'✗')+' '+resCount+'/'+resTotal+'</span></div>';
+  // ── Veredicto ──
+  var qual=meiosOk&&resOk;
+  var fEl=document.getElementById('qualif-final');
+  if(fEl){
+    fEl.textContent=qual?'✓ UNIDADE QUALIFICADA':'✗ UNIDADE NÃO QUALIFICADA';
+    fEl.style.background=qual?'#e8f5e9':'#ffebee';
+    fEl.style.color=qual?'var(--green)':'var(--red)';
+    fEl.style.border='3px solid '+(qual?'var(--green)':'var(--red)');
+  }
+}
+
+// ====== CASOS PARA ATUAÇÃO & PLANO POR PROCESSO ======
+function buildFlagInputs(){
+  Object.entries(PILARES).forEach(function(e){
+    var pilarKey=e[0],pilar=e[1];
+    Object.entries(pilar.processos).forEach(function(pe){
+      var id=pe[0];
+      var body=document.getElementById('body-'+id);
+      if(!body)return;
+      flaggedCases[id]={flagged:false,note:''};
+      // Caso para atuação
+      var cw=document.createElement('div');cw.style.marginTop='12px';
+      var cb=document.createElement('button');
+      cb.className='caso-btn';cb.id='caso-btn-'+id;cb.type='button';
+      cb.innerHTML='&#128204; Caso para atuação';
+      cb.onclick=(function(pid){return function(){toggleFlag(pid);};})(id);
+      var nw=document.createElement('div');
+      nw.className='caso-note-wrap';nw.id='caso-note-wrap-'+id;
+      var nt=document.createElement('textarea');
+      nt.id='caso-note-'+id;nt.placeholder='Descreva o caso, ponto observado, contexto...';
+      nt.oninput=(function(pid){return function(){flaggedCases[pid].note=this.value;};})(id);
+      nw.appendChild(nt);cw.appendChild(cb);cw.appendChild(nw);body.appendChild(cw);
+      // Plano de ação — mini table
+      var pw=document.createElement('div');pw.className='plano-proc-wrap';
+      var pl=document.createElement('span');pl.className='plano-proc-label';pl.textContent='Plano de Ação';
+      pw.appendChild(pl);
+      var tbl=document.createElement('table');tbl.className='plano-table';
+      tbl.innerHTML='<thead><tr><th>Pilar</th><th>Ponto analisado</th><th>Ação</th><th>Setor Resp.</th><th>Data</th><th>Status</th><th></th></tr></thead>';
+      var tb=document.createElement('tbody');tb.id='plano-proc-body-'+id;tbl.appendChild(tb);
+      pw.appendChild(tbl);
+      var ab=document.createElement('button');ab.className='btn-add-row';ab.type='button';
+      ab.textContent='+ Adicionar linha';
+      ab.onclick=(function(pid,plbl){return function(){addPlanoProcessoRow(pid,plbl);};})(id,pilar.label);
+      pw.appendChild(ab);
+      body.appendChild(pw);
+    });
+  });
+}
+function toggleFlag(id){
+  if(!flaggedCases[id])flaggedCases[id]={flagged:false,note:''};
+  flaggedCases[id].flagged=!flaggedCases[id].flagged;
+  var btn=document.getElementById('caso-btn-'+id);
+  var wrap=document.getElementById('caso-note-wrap-'+id);
+  if(btn)btn.className='caso-btn'+(flaggedCases[id].flagged?' active':'');
+  if(wrap)wrap.className='caso-note-wrap'+(flaggedCases[id].flagged?' show':'');
+}
+
+function addPlanoProcessoRow(id,pilarLabel){
+  var tb=document.getElementById('plano-proc-body-'+id);if(!tb)return;
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td style="background:#f5f7f9;color:#0d3e54;font-size:12px;font-weight:700;white-space:nowrap;">'+pilarLabel+'</td>'
+    +'<td><textarea placeholder="Ponto observado..."></textarea></td>'
+    +'<td><textarea placeholder="Ação a ser tomada..."></textarea></td>'
+    +'<td><input type="text" placeholder="Setor / Responsável"></td>'
+    +'<td><input type="date"></td>'
+    +'<td><select><option>Pendente</option><option>Em andamento</option><option>Concluído</option></select></td>'
+    +'<td><button class="btn-del-row" type="button" onclick="this.closest('tr').remove()">x</button></td>';
+  tb.appendChild(tr);
+}
+
+// ====== GERAR RELATÓRIO HTML PARA E-MAIL ======
+function gerarRelatorio(){
+  var d=gatherData();
+  var unitEl=document.getElementById('unit-name')||document.getElementById('unit-select');
+  var unit=unitEl?unitEl.value||'---':'---';
+  var period=d.meta.period?formatPeriod(d.meta.period):(d.meta.date||'---');
+  var periodoRes=document.getElementById('periodo-res')?document.getElementById('periodo-res').value||period:period;
+  var roleEl=document.getElementById('role-select');
+  var tipoRaw=roleEl?roleEl.value:'';
+  var tipo=tipoRaw==='auditoria'?'Auditoria':'Consultoria';
+  var evaluator=d.meta.evaluator||'---';
+  var dateStr=d.meta.date||new Date().toLocaleDateString('pt-BR');
+  var pilarData=[];
+  Object.entries(PILARES).forEach(function(e){
+    var pid=e[0],p=e[1];
+    var el=document.getElementById('score-'+pid);
+    var pts=parseFloat((el&&el.textContent)||'0')||0;
+    var pct=Math.round((pts/p.max)*100);
+    pilarData.push({pid:pid,label:p.label,pts:pts,max:p.max,pct:pct,processos:p.processos});
+  });
+  var resIds=typeof RESULTADOS!=='undefined'
+    ?RESULTADOS.map(function(r){return{id:r.id,label:r.n};})
+    :Object.keys(RES_IND).map(function(k){return{id:k,label:k.toUpperCase()};});
+  var resMet=0,resRows='';
+  resIds.forEach(function(r){
+    var meta=(document.getElementById('rmeta-'+r.id)||{}).value||'';
+    var real=(document.getElementById('rreal-'+r.id)||{}).value||'';
+    var ptsEl=document.getElementById('rpts-'+r.id);
+    var pts=ptsEl?parseInt(ptsEl.textContent):NaN;
+    var ok=!isNaN(pts)&&pts>0;if(ok)resMet++;
+    var col=ok?'#34a853':'#ea4335';
+    resRows+='<tr><td style="padding:5px 8px;font-size:12px;border-bottom:1px solid #eee;">'+r.label+'</td>'
+      +'<td style="padding:5px 8px;font-size:12px;text-align:center;border-bottom:1px solid #eee;">'+(meta||'—')+'</td>'
+      +'<td style="padding:5px 8px;font-size:12px;text-align:center;border-bottom:1px solid #eee;">'+(real||'—')+'</td>'
+      +'<td style="padding:5px 8px;font-size:12px;text-align:center;border-bottom:1px solid #eee;color:'+col+';font-weight:700;">'+(ok?'✓':'✗')+'</td></tr>';
+  });
+  var pilarCards='';
+  pilarData.forEach(function(p){
+    var col=p.pct>=65?'#34a853':'#ea4335';var bg=p.pct>=65?'#e8f5e9':'#ffebee';
+    pilarCards+='<td style="text-align:center;padding:10px 14px;background:'+bg+';border-radius:8px;min-width:80px;">'
+      +'<div style="font-size:22px;font-weight:900;color:'+col+';">'+p.pct+'%</div>'
+      +'<div style="font-size:11px;font-weight:700;color:#555;margin-top:2px;">'+p.label+'</div>'
+      +'<div style="font-size:10px;color:#888;">'+p.pts+'/'+p.max+' pts</div></td>';
+  });
+  var allOk=pilarData.every(function(p){return p.pct>=65;});
+  var qual=allOk&&resMet>=3;
+  var qText=qual?'✓ UNIDADE QUALIFICADA':'✗ Unidade não qualificada neste período';
+  var qCol=qual?'#34a853':'#ea4335';var qBg=qual?'#e8f5e9':'#ffebee';
+  var qualPilares=pilarData.filter(function(p){return p.pct>=65;}).map(function(p){return '<b>'+p.label+'</b>';});
+  var coment='A unidade atingiu <b>'+resMet+' das '+resIds.length+'</b> metas dos indicadores do PEO 🎉<br>';
+  if(qualPilares.length>0)coment+='Nas categorias <b>Meios</b>, qualificou-se nos pilares '+qualPilares.join(' e ')+' 🥳<br>';
+  coment+='Vamos juntos em rumo à excelência 💚🚀';
+  var casosHTML='';
+  pilarData.forEach(function(p){
+    var casos=[];
+    Object.entries(p.processos).forEach(function(pe){
+      var pid=pe[0],proc=pe[1];
+      if(flaggedCases[pid]&&flaggedCases[pid].flagged)casos.push({id:pid,name:proc.n});
+    });
+    if(casos.length===0)return;
+    casosHTML+='<div style="margin-top:22px;">';
+    casosHTML+='<div style="font-size:14px;font-weight:700;color:#0d3e54;border-bottom:2px solid #0d3e54;padding-bottom:5px;margin-bottom:12px;">Pilar '+p.label+'</div>';
+    casos.forEach(function(c){
+      casosHTML+='<div style="margin-bottom:18px;padding:14px;background:#fafafa;border-radius:8px;border-left:4px solid #e65100;">';
+      casosHTML+='<div style="font-size:13px;font-weight:700;color:#e65100;margin-bottom:6px;">'+c.name+'</div>';
+      var note=(flaggedCases[c.id]&&flaggedCases[c.id].note)||'';
+      if(note)casosHTML+='<div style="font-size:13px;margin-bottom:8px;line-height:1.6;">'+note.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>';
+      if(photoData[c.id]&&photoData[c.id].length>0){
+        photoData[c.id].forEach(function(src){
+          casosHTML+='<img src="'+src+'" style="max-width:100%;height:auto;border-radius:6px;margin:4px 0;display:block;"><br>';
+        });
+      }
+      var planoTb=document.getElementById('plano-proc-body-'+c.id);
+      if(planoTb&&planoTb.rows.length>0){
+        casosHTML+='<div style="margin-top:8px;padding:8px 10px;background:#fff3e0;border-radius:6px;font-size:12px;"><b>Plano de Ação:</b><table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:11px;"><tr style="background:#ffe0b2;"><th style="padding:3px 6px;text-align:left;">Ponto</th><th style="padding:3px 6px;text-align:left;">Ação</th><th style="padding:3px 6px;text-align:left;">Resp.</th><th style="padding:3px 6px;text-align:left;">Data</th><th style="padding:3px 6px;text-align:left;">Status</th></tr>';
+        Array.from(planoTb.rows).forEach(function(row){
+          var cells=row.cells;if(cells.length<6)return;
+          var ponto=((cells[1].querySelector('textarea')||{}).value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+          var acao=((cells[2].querySelector('textarea')||{}).value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+          var setor=((cells[3].querySelector('input')||{}).value||'');
+          var data=((cells[4].querySelector('input')||{}).value||'');
+          var status=((cells[5].querySelector('select')||{}).value||'');
+          casosHTML+='<tr style="border-bottom:1px solid #eee;"><td style="padding:3px 6px;">'+ponto+'</td><td style="padding:3px 6px;">'+acao+'</td><td style="padding:3px 6px;">'+setor+'</td><td style="padding:3px 6px;white-space:nowrap;">'+data+'</td><td style="padding:3px 6px;">'+status+'</td></tr>';
+        });
+        casosHTML+='</table></div>';
+      }
+      casosHTML+='</div>';
+    });
+    casosHTML+='</div>';
+  });
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório '+tipo+' PEO – '+unit+'</title>'
+    +'<style>body{font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:30px 20px;font-size:13px;color:#333;line-height:1.6;}'
+    +'#copy-bar{position:fixed;top:12px;right:12px;background:#0d3e54;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3);z-index:999;}'
+    +'#copy-bar:hover{background:#1a6a8a;}table{border-collapse:collapse;}'
+    +'@media print{#copy-bar{display:none!important;}}</style></head><body>'
+    +'<button id="copy-bar" onclick="copiarConteudo()">&#128203; Selecionar tudo para copiar</button>'
+    +'<div id="relatorio">'
+    +'Prezados, bom dia!<br><br>'
+    +'Segue relatório de <b>'+tipo+'</b> PEO realizado na unidade <b>'+unit+'</b> em '+dateStr+' referente aos resultados de <b>'+periodoRes+'</b>.<br><br>'
+    +'<table style="border-spacing:8px;margin:12px 0;"><tr>'+pilarCards+'</tr></table>'
+    +'<table style="width:100%;border:1px solid #ddd;margin:12px 0;">'
+    +'<tr style="background:#0d3e54;color:#fff;"><th style="padding:6px 8px;font-size:11px;text-align:left;">Indicador</th>'
+    +'<th style="padding:6px 8px;font-size:11px;">Meta</th><th style="padding:6px 8px;font-size:11px;">Real</th>'
+    +'<th style="padding:6px 8px;font-size:11px;">Status</th></tr>'+resRows+'</table>'
+    +'<div style="margin:14px 0;padding:14px;background:'+qBg+';border-radius:8px;text-align:center;font-size:16px;font-weight:900;color:'+qCol+';">'+qText+'</div>'
+    +'<div style="margin:14px 0;"><b>Comentários Gerais:</b><br><br>'+coment+'</div>'
+    +casosHTML
+    +'<br><br><div style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:10px;">Relatório gerado pelo Painel PEO • Avaliador: '+evaluator+' • '+dateStr+'</div>'
+    +'</div>'
+    +'<script>function copiarConteudo(){'
+    +'var el=document.getElementById("relatorio");'
+    +'var s=window.getSelection();s.removeAllRanges();'
+    +'var r=document.createRange();r.selectNodeContents(el);s.addRange(r);'
+    +'try{var ok=document.execCommand("copy");'
+    +'if(ok)alert("✅ Copiado!\\n\\nAgora abra o Gmail, crie um novo e-mail e cole (Ctrl+V) no corpo da mensagem.\\nAs fotos e formatação serão preservadas.");'
+    +'else alert("Use Ctrl+A para selecionar tudo e Ctrl+C para copiar.");}catch(e){alert("Use Ctrl+A e Ctrl+C para copiar o conteúdo.");}}'
+    +'<\/script>'
+    +'</body></html>';
+  var w=window.open('','_blank','width=760,height=850,scrollbars=yes');
+  if(w){w.document.write(html);w.document.close();}
+  else{alert('Popup bloqueado pelo navegador.\nPermita popups para este site e clique em Enviar novamente.');}
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// FIREBASE AUTH + FIRESTORE
+// ─────────────────────────────────────────────────────────────────
+var _db, _currentUser;
+(function(){
+  try{
+    firebase.initializeApp(firebaseConfig);
+  } catch(e){
+    // already initialized
+    if(e.code !== 'app/duplicate-app') throw e;
+  }
+  var _auth = firebase.auth();
+  _db = firebase.firestore();
+
+  _auth.onAuthStateChanged(async function(user){
+    if(!user){ window.location.href='login.html'; return; }
+    try{
+      var doc = await _db.collection('users').doc(user.uid).get();
+      var uData = doc.exists ? doc.data() : {};
+      _currentUser = user;
+      _currentUser._name = uData.name || user.email;
+      var hdrUser = document.getElementById('hdr-user');
+      var btnLogout = document.getElementById('btn-logout');
+      if(hdrUser){ hdrUser.textContent = '👤 '+_currentUser._name; hdrUser.style.display=''; }
+      if(btnLogout) btnLogout.style.display='';
+      // Pre-fill evaluator name if empty
+      var evEl = document.getElementById('evaluator-name');
+      if(evEl && !evEl.value) evEl.value = _currentUser._name;
+    } catch(err){ console.warn('User load error:', err); _currentUser = user; _currentUser._name = user.email; }
+    var ov = document.getElementById('auth-overlay');
+    if(ov) ov.style.display='none';
+  });
+})();
+
+function doLogout(){
+  firebase.auth().signOut().then(function(){ window.location.href='login.html'; });
+}
+
+function buildEvalSaveData(){
+  var unit = (document.getElementById('unit-select')||{}).value || '';
+  var roleEl = document.getElementById('role-select');
+  var roleTxt = roleEl ? (roleEl.options[roleEl.selectedIndex] ? roleEl.options[roleEl.selectedIndex].text : '') : '';
+  var roleVal = roleEl ? roleEl.value : '';
+  var tipo = roleVal.indexOf('audit')!==-1 ? 'Auditoria' : 'Consultoria';
+  var evaluator = (document.getElementById('evaluator-name')||{}).value || '';
+  var date = (document.getElementById('eval-date')||{}).value || '';
+  var period = (document.getElementById('ref-period')||{}).value || '';
+  var periodoRes = (document.getElementById('periodo-res')||{}).value || '';
+
+  // Pilar scores — re-compute from scores object
+  var pilarScores = {};
+  Object.entries(PILARES).forEach(function(e){
+    var pid = e[0], pilar = e[1];
+    var total = 0;
+    Object.entries(pilar.processos).forEach(function(pe){
+      var id = pe[0], proc = pe[1];
+      var v = activeRole && scores[id] && scores[id][activeRole] !== undefined ? scores[id][activeRole] : null;
+      if(v !== null) total += (v/3)*proc.w;
+    });
+    var pct = Math.round((total/pilar.max)*100);
+    pilarScores[pid] = { label: pilar.label, pts: parseFloat(total.toFixed(1)), pct: pct, max: pilar.max };
+  });
+
+  // Resultados
+  var resultados = {};
+    RESULTADOS.forEach(function(r) {
+    var k = r.id;
+    var metaEl = document.getElementById('res-meta-'+k);
+    var realEl = document.getElementById('res-real-'+k);
+    var ptsEl  = document.getElementById('rpts-'+k);
+    var meta = metaEl ? metaEl.value : '';
+    var real = realEl ? realEl.value : '';
+    var pts  = ptsEl  ? parseInt(ptsEl.textContent) : NaN;
+    var ok   = !isNaN(pts) && pts > 0;
+    resultados[k] = { label: r.n || k, meta: meta, real: real, pts: isNaN(pts)?0:pts, ok: ok };
+  });
+
+  // Qualification
+  var meiosOk = Object.values(pilarScores).length > 0 && Object.values(pilarScores).every(function(p){ return p.pct >= 65; });
+  var resIds = Object.keys(resultados);
+  var resMet = resIds.filter(function(k){ return resultados[k].ok; }).length;
+  var qualified = meiosOk && resMet >= 3;
+
+  // Flagged cases (only flagged)
+  var flagged = {};
+  Object.entries(flaggedCases).forEach(function(e){
+    var id=e[0], fc=e[1];
+    if(fc.flagged) flagged[id] = { note: fc.note || '' };
+  });
+
+  // Planos por processo
+  var planos = {};
+  Object.entries(PILARES).forEach(function(e){
+    var pid=e[0], pilar=e[1];
+    Object.keys(pilar.processos).forEach(function(id){
+      var tbody = document.getElementById('plano-proc-body-'+id);
+      if(!tbody) return;
+      var rows = [];
+      tbody.querySelectorAll('tr').forEach(function(tr){
+        var cells = tr.querySelectorAll('td');
+        if(cells.length < 6) return;
+        var ponto = (cells[1].querySelector('textarea')||{}).value||'';
+        var acao  = (cells[2].querySelector('textarea')||{}).value||'';
+        var setor = (cells[3].querySelector('input')||{}).value||'';
+        var data  = (cells[4].querySelector('input')||{}).value||'';
+        var status= (cells[5].querySelector('select')||{}).value||'';
+        if(ponto||acao) rows.push({ponto:ponto,acao:acao,setor:setor,data:data,status:status});
+      });
+      if(rows.length) planos[id] = rows;
+    });
+  });
+
+  // Global plano
+  var planoGlobal = [];
+  var gpTbody = document.getElementById('plano-global-tbody');
+  if(gpTbody){
+    gpTbody.querySelectorAll('tr').forEach(function(tr){
+      var cells = tr.querySelectorAll('td');
+      if(cells.length < 6) return;
+      var pilarV = (cells[0].querySelector('select')||{}).value||'';
+      var ponto  = (cells[1].querySelector('textarea')||{}).value||'';
+      var acao   = (cells[2].querySelector('textarea')||{}).value||'';
+      var setor  = (cells[3].querySelector('input')||{}).value||'';
+      var data   = (cells[4].querySelector('input')||{}).value||'';
+      var status = (cells[5].querySelector('select')||{}).value||'';
+      if(ponto||acao) planoGlobal.push({pilar:pilarV,ponto:ponto,acao:acao,setor:setor,data:data,status:status});
+    });
+  }
+
+  return {
+    unitName: unit,
+    evalType: 'ma',
+    tipo: tipo,
+    role: roleTxt,
+    evaluatorName: evaluator,
+    date: date,
+    period: period,
+    periodoRes: periodoRes,
+    pilarScores: pilarScores,
+    resultados: resultados,
+    qualificacao: { meiosOk: meiosOk, resMet: resMet, qualified: qualified },
+    flaggedCases: flagged,
+    planosPorProcesso: planos,
+    planoGlobal: planoGlobal,
+    status: 'submitted'
+  };
+}
+
+</script>
+</body>
+</html>

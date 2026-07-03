@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PEO — Início</title>
+  <style>
+    :root{--blue:#0d3e54;--blue-light:#1a6a8a;--green:#2e7d32;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:Arial,sans-serif;background:#f0f4f7;min-height:100vh;}
+    header{background:var(--blue);color:#fff;padding:14px 24px;display:flex;
+           align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+    header h1{font-size:18px;font-weight:900;}
+    .header-right{display:flex;align-items:center;gap:14px;font-size:13px;}
+    .btn-sair{background:transparent;border:1.5px solid rgba(255,255,255,.5);color:#fff;
+              padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;transition:.2s;}
+    .btn-sair:hover{background:rgba(255,255,255,.15);}
+    .content{max-width:900px;margin:0 auto;padding:32px 16px;}
+    .welcome{font-size:20px;font-weight:700;color:var(--blue);margin-bottom:6px;}
+    .subtitle{color:#666;font-size:14px;margin-bottom:28px;}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-bottom:36px;}
+    .eval-card{background:#fff;border-radius:14px;padding:28px 24px;box-shadow:0 2px 12px rgba(0,0,0,.08);
+               text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s;display:block;
+               border-left:5px solid var(--blue);}
+    .eval-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.14);}
+    .eval-card .icon{font-size:32px;margin-bottom:12px;}
+    .eval-card h2{font-size:17px;font-weight:800;color:var(--blue);margin-bottom:5px;}
+    .eval-card p{font-size:13px;color:#777;}
+    .section-title{font-size:15px;font-weight:700;color:var(--blue);margin-bottom:14px;
+                   padding-bottom:8px;border-bottom:2px solid #e0e6ea;}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;
+          overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+    th{background:var(--blue);color:#fff;padding:10px 14px;font-size:12px;text-align:left;}
+    td{padding:10px 14px;font-size:13px;border-bottom:1px solid #f0f4f7;color:#333;}
+    tr:last-child td{border-bottom:none;}
+    .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+    .badge-ok{background:#e8f5e9;color:#2e7d32;}
+    .badge-no{background:#ffebee;color:#c62828;}
+    .badge-cons{background:#e3f2fd;color:#1565c0;}
+    .badge-aud{background:#fff3e0;color:#e65100;}
+    .empty{color:#aaa;font-size:13px;text-align:center;padding:28px;background:#fff;
+           border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+    #auth-overlay{position:fixed;inset:0;background:#0d3e54;display:flex;align-items:center;
+                  justify-content:center;color:#fff;font-size:16px;z-index:999;}
+  </style>
+</head>
+<body>
+<div id="auth-overlay">🔄 Carregando...</div>
+
+<header>
+  <h1>🏥 Painel PEO</h1>
+  <div class="header-right">
+    <span id="user-name">—</span>
+    <button class="btn-sair" onclick="doLogout()">Sair</button>
+  </div>
+</header>
+
+<div class="content" id="app" style="display:none">
+  <div class="welcome" id="welcome-msg">Olá!</div>
+  <p class="subtitle">Selecione qual avaliação deseja realizar:</p>
+
+  <div class="cards">
+    <a href="avaliacao_pilares.html" class="eval-card">
+      <div class="icon">📋</div>
+      <h2>PEO — Clínica SIM</h2>
+      <p>Consultoria ou Auditoria para unidades SIM (CE)</p>
+    </a>
+    <a href="avaliacao_pilares_ma.html" class="eval-card">
+      <div class="icon">📋</div>
+      <h2>PEO — Maranhão</h2>
+      <p>Consultoria ou Auditoria para unidades MA</p>
+    </a>
+  </div>
+
+  <div class="section-title">Minhas últimas avaliações</div>
+  <div id="history-container">
+    <div class="empty">Carregando histórico...</div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) { window.location.href = 'login.html'; return; }
+
+    // Check role — admins go to admin panel
+    const doc = await db.collection('users').doc(user.uid).get();
+    const role = doc.exists ? doc.data().role : 'consultor';
+    if (role === 'admin') { window.location.href = 'admin.html'; return; }
+
+    const name = doc.exists ? doc.data().name : (user.email || '');
+    document.getElementById('user-name').textContent = name;
+    document.getElementById('welcome-msg').textContent = 'Olá, ' + name.split(' ')[0] + '!';
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+
+    loadHistory(user.uid);
+  });
+
+  async function loadHistory(uid) {
+    const cont = document.getElementById('history-container');
+    try {
+      const snap = await db.collection('evaluations')
+        .where('evaluatorUid', '==', uid)
+        .orderBy('submittedAt', 'desc')
+        .limit(10)
+        .get();
+
+      if (snap.empty) {
+        cont.innerHTML = '<div class="empty">Nenhuma avaliação enviada ainda.</div>';
+        return;
+      }
+
+      let rows = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const qual = d.qualificacao;
+        const badge = qual && qual.qualified
+          ? '<span class="badge badge-ok">✓ Qualificada</span>'
+          : '<span class="badge badge-no">✗ Não qualif.</span>';
+        const tipoBadge = d.tipo === 'Auditoria'
+          ? '<span class="badge badge-aud">Auditoria</span>'
+          : '<span class="badge badge-cons">Consultoria</span>';
+        const dt = d.submittedAt ? d.submittedAt.toDate().toLocaleDateString('pt-BR') : d.date || '—';
+        rows += `<tr>
+          <td>${dt}</td>
+          <td>${d.unitName || '—'}</td>
+          <td>${tipoBadge}</td>
+          <td>${d.period || '—'}</td>
+          <td>${badge}</td>
+        </tr>`;
+      });
+
+      cont.innerHTML = `<table>
+        <thead><tr><th>Data</th><th>Unidade</th><th>Tipo</th><th>Período</th><th>Resultado</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    } catch(e) {
+      cont.innerHTML = '<div class="empty">Histórico indisponível.</div>';
+    }
+  }
+
+  function doLogout() {
+    auth.signOut().then(() => window.location.href = 'login.html');
+  }
+</script>
+</body>
+</html>
