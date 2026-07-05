@@ -140,8 +140,7 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-<div id="auth-overlay" style="position:fixed;inset:0;background:#0d3e54;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;z-index:9999;flex-direction:column;gap:16px;">🔄 Verificando acesso...<a href="login.html" id="auth-fallback-link" style="display:none;color:#7ecfff;font-size:13px;text-decoration:underline;">Clique aqui para fazer login</a></div>
-<script>setTimeout(function(){var lnk=document.getElementById("auth-fallback-link");if(lnk&&document.getElementById("auth-overlay").style.display!=="none")lnk.style.display="block";},4000);setTimeout(function(){if(document.getElementById("auth-overlay").style.display!=="none")window.location.href="login.html";},8000);<\/script>
+<div id="auth-overlay" style="display:none"></div>
 <div class="header">
   <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
     <a href="index.html" style="color:rgba(255,255,255,.65);text-decoration:none;font-size:12px;white-space:nowrap">&larr; Voltar</a>
