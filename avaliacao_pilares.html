@@ -125,11 +125,24 @@
   .plano-proc-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:4px;display:block;}
   .plano-proc-wrap textarea{width:100%;min-height:60px;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;resize:vertical;box-sizing:border-box;font-family:inherit;}
   @media print{.caso-btn{display:none!important;}.caso-note-wrap{display:block!important;}.plano-proc-wrap{display:block!important;}}
+
+  .photo-flag{position:absolute;bottom:-7px;left:-7px;background:#fff;border:2px solid #ccc;border-radius:50%;width:22px;height:22px;font-size:12px;line-height:18px;text-align:center;cursor:pointer;padding:0;transition:all .15s;z-index:2;}
+  .photo-flag:hover{border-color:#c62828;}
+  .photo-flag.flagged{background:#c62828;border-color:#c62828;color:#fff;}
+  .photo-thumb.critical{border:2px solid #c62828 !important;box-shadow:0 0 0 3px rgba(198,40,40,.25);}
+
+  /* Responsible person section */
+  .resp-wrap{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);}
+  .resp-email-inp{width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;font-family:inherit;margin-bottom:6px;box-sizing:border-box;}
+  .resp-email-inp:focus{outline:none;border-color:var(--blue-light);}
+  .resp-desc-ta{width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;resize:vertical;min-height:52px;font-family:inherit;box-sizing:border-box;}
+  .resp-desc-ta:focus{outline:none;border-color:var(--blue-light);}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div id="auth-overlay" style="position:fixed;inset:0;background:#0d3e54;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;z-index:9999">🔄 Verificando acesso...</div>
@@ -147,7 +160,7 @@
   </div>
 </div>
 <div class="setup-bar">
-  <label>Unidade</label><select id="unit-name" onchange="updateHeader();tryAutoFill()"><option value="">(selecionar)</option><option value="Centro">Centro</option><option value="Via Sul">Via Sul</option><option value="Messejana">Messejana</option><option value="Fátima">Fátima</option><option value="NSF">NSF</option><option value="RMF">RMF</option><option value="Eusébio">Eusébio</option><option value="Maraponga">Maraponga</option><option value="Itaperi">Itaperi</option><option value="Jóquei">Jóquei</option></select>
+  <label>Unidade</label><select id="unit-name" onchange="updateHeader();tryAutoFill()"><option value="">(selecionar)</option><option value="Centro">Centro</option><option value="Via Sul">Via Sul</option><option value="Messejana">Messejana</option><option value="Fátima">Fátima</option><option value="NSF">NSF</option><option value="RMF">RMF</option><option value="Eusébio">Eusébio</option><option value="Maraponga">Maraponga</option><option value="Itaperi">Itaperi</option><option value="Jóquei">Jóquei</option><option value="RMR">RMR</option><option value="Boa Vista">Boa Vista</option><option value="Guararapes">Guararapes</option><option value="Prazeres">Prazeres</option><option value="Tacaruna">Tacaruna</option><option value="Lapa">Lapa</option></select>
   <div class="sep"></div>
   <label>Papel</label>
   <select id="role-select" onchange="updateHeader();updateRoleVisibility()">
@@ -162,7 +175,7 @@
   <div class="sep"></div>
   <label>Data</label><input type="date" id="eval-date" oninput="updateHeader()">
   <div class="sep"></div>
-  <label>Per&#237;odo</label><input type="month" id="ref-period" oninput="updateHeader()" title="M&#234;s de refer&#234;ncia da avalia&#231;&#227;o">
+  <label>Per&#237;odo</label><input type="month" id="ref-period" oninput="updateHeader();autoDetectTipo()" title="M&#234;s de refer&#234;ncia da avalia&#231;&#227;o">
   <div class="sep"></div>
   <label title="M&#234;s anterior (Consultoria) ou Trimestre (Auditoria)">Per. Resultados</label><input type="text" id="periodo-res" placeholder="Ex: Mai/26 ou T2&#160;2026" style="width:110px;" oninput="updateHeader()">
   <div class="sep"></div>
@@ -170,6 +183,7 @@
   <button class="btn btn-secondary" style="padding:5px 12px;font-size:12px;" onclick="document.getElementById('imp-sim').click()">&#8679; Importar</button>
   <input type="file" id="imp-sim" accept=".json,.csv" style="display:none" onchange="handleImport(this)">
   <button class="btn btn-secondary" style="padding:5px 12px;font-size:12px;" onclick="downloadTemplate()">&#8681; Template</button>
+  <button class="btn btn-secondary" style="padding:5px 12px;font-size:12px;background:#1565c0;color:#fff;border-color:#1565c0;" onclick="triggerXlsxImport()">&#128202; Excel</button>
   <span id="import-status" style="font-size:11px;color:var(--muted);margin-left:2px;"></span>
 </div>
 <div class="tabs">
@@ -1301,10 +1315,27 @@
   <button class="btn btn-secondary" onclick="loadLocal()">Carregar rascunho</button>
   <button class="btn btn-secondary" onclick="novoMes()">&#128260; Novo M&#234;s</button>
   <button class="btn btn-primary" onclick="exportJSON()">Exportar JSON</button>
+  <button class="btn btn-primary" style="background:#1b5e20;" onclick="exportToExcel()">&#8595; Excel</button>
   <button class="btn btn-green" onclick="window.print()">Imprimir / PDF</button>
-  <button class="btn" style="background:#e65100;color:#fff;" onclick="finalizarEnviar()">&#9993; Enviar</button>
+  <button class="btn" style="background:#e65100;color:#fff;" onclick="openEmailModal()">&#9993; Enviar</button>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
+
+const IMPORT_MAP = [
+  {key:'turnover', tests:['turnover'], label:'Turnover'},
+  {key:'tme',      tests:['tme','tempo de atendimento'], label:'TME'},
+  {key:'gsvcli',   tests:['gsv cl','clínica','clinica','gsv clí'], label:'GSV Clínicas'},
+  {key:'sim',      tests:['sim+','assinante','novos ass'], label:'Novos Assinantes SiM+'},
+  {key:'custo',    tests:['custo'], label:'Custo Clínica'}
+];
+const MEIOS_MAP = [
+  {key:'operacoes', tests:['operaç','operac'], label:'Operações'},
+  {key:'vendas',    tests:['vendas'], label:'Vendas'},
+  {key:'gente',     tests:['gente'], label:'Gente'},
+  {key:'gestao',    tests:['gestão','gestao'], label:'Gestão'}
+];
+
 const PILARES={"gestao": {"label": "Gestao", "max": 100, "processos": {"gestao_5s": {"n": "Gestao do 5S", "w": 25}, "gestao_canal": {"n": "Canal de Denuncias", "w": 10}, "gestao_agenda": {"n": "Agenda da Rotina", "w": 25}, "gestao_reunioes": {"n": "Reunioes Operacionais", "w": 20}, "gestao_pop": {"n": "POP - Procedimento Operacional Padrao", "w": 5}, "gestao_pdca": {"n": "PDCA Trimestral", "w": 15}}}, "gente": {"label": "Gente", "max": 100, "processos": {"gente_jornada": {"n": "Controle de Jornada e Planejamento de Ferias", "w": 15}, "gente_vagas": {"n": "Vagas Abertas", "w": 15}, "gente_avaliacao": {"n": "Avaliacao de Desempenho e Fluxo de Reversao", "w": 15}, "gente_compliance": {"n": "Checklist Compliance", "w": 10}, "gente_orcamento": {"n": "Orcamento de Gente", "w": 10}, "gente_onboarding": {"n": "Onboarding (3 meses)", "w": 10}, "gente_abs": {"n": "Absenteismo", "w": 15}, "gente_enps": {"n": "eNPS", "w": 10}}}, "operacoes": {"label": "Operacoes", "max": 150, "processos": {"op_manutencao": {"n": "Manutencao Corretiva de Estrutura e Equipamentos", "w": 15}, "op_ti": {"n": "Gestao de Ambientes e Equipamentos de TI", "w": 10}, "op_conciliacao": {"n": "Conciliacao", "w": 10}, "op_compras": {"n": "Compras", "w": 10}, "op_estoque": {"n": "Gestao de Estoque", "w": 15}, "op_ofertas": {"n": "Ofertas Planejadas", "w": 10}, "op_gcc": {"n": "Semanal GCC & Plan. & Ops", "w": 5}, "op_bloqueio": {"n": "Gestao de Bloqueio Medico", "w": 10}, "op_remarcacao": {"n": "Remarcacao de Agendas Bloqueadas", "w": 10}, "op_atraso": {"n": "Atraso Medico", "w": 10}, "op_npsmed": {"n": "NPS Medicos", "w": 10}, "op_parceiros": {"n": "Captacao e Renegociacao de Parceiros", "w": 5}, "op_nps": {"n": "NPS", "w": 10}, "op_tme": {"n": "Tempo de Atendimento (TME)", "w": 10}, "op_reclamacoes": {"n": "Reclamacoes dos Clientes", "w": 10}}}, "vendas": {"label": "Vendas", "max": 150, "processos": {"vnd_5passos": {"n": "5 Passos de Vendas", "w": 40}, "vnd_sim": {"n": "SiM+", "w": 15}, "vnd_conversao": {"n": "Conversao SiM+", "w": 10}, "vnd_gsvexames": {"n": "GSV Exames", "w": 15}, "vnd_pepmed": {"n": "PEP Medicina", "w": 15}, "vnd_desconto": {"n": "Gestao de Descontos", "w": 10}, "vnd_gsvodonto": {"n": "GSV Odonto", "w": 15}, "vnd_pepodonto": {"n": "PEP Odonto", "w": 5}, "vnd_rv": {"n": "RV", "w": 15}, "vnd_campanhas": {"n": "Campanhas e Execucao na Unidade", "w": 5}, "vnd_acoes": {"n": "Acoes Externas de Atracao", "w": 5}}}};
 const ROLE_LABELS={autoavaliacao:"Autoavaliacao",consultoria1:"Consultoria 1",consultoria2:"Consultoria 2",auditoria:"Auditoria"};
 const scores={};
@@ -1434,7 +1465,7 @@ function gatherData(){
     if(cells.length>=6)plano.push({pilar:cells[0]?.value,ponto:cells[1]?.value,acao:cells[2]?.value,setor:cells[3]?.value,data:cells[4]?.value,status:cells[5]?.value});
   });
   const period=document.getElementById("ref-period")?.value||"";
-  return {meta:{unit:document.getElementById("unit-name").value,role:document.getElementById("role-select").value,evaluator:document.getElementById("evaluator-name").value,date:document.getElementById("eval-date").value,period,exportedAt:new Date().toISOString()},scores,obs,ind,resInd,photos:photoData,plano};
+  return {meta:{unit:document.getElementById("unit-name").value,role:document.getElementById("role-select").value,evaluator:document.getElementById("evaluator-name").value,date:document.getElementById("eval-date").value,period,exportedAt:new Date().toISOString()},scores,obs,ind,resInd,photos:photoData,photoFlags,resp:processResp,plano};
 }
 function saveLocal(){try{sessionStorage.setItem("avp_draft",JSON.stringify(gatherData()));alert("Rascunho salvo!");}catch(e){alert("Erro: "+e.message);}}
 function loadLocal(){try{const r=sessionStorage.getItem("avp_draft");if(!r){alert("Nenhum rascunho encontrado.");return;}applyData(JSON.parse(r));alert("Rascunho carregado!");}catch(e){alert("Erro: "+e.message);}}
@@ -1451,7 +1482,14 @@ function applyData(d){
   if(d.obs)Object.entries(d.obs).forEach(([id,v])=>{const e=document.getElementById("obs-"+id);if(e)e.value=v;});
   if(d.ind)Object.entries(d.ind).forEach(([id,v])=>{const m=document.getElementById("meta-"+id),r=document.getElementById("real-"+id);if(m)m.value=v.meta||"";if(r)r.value=v.real||"";calcDelta(id);});
   if(d.resInd)Object.entries(d.resInd).forEach(([id,v])=>{const m=document.getElementById("rmeta-"+id),r=document.getElementById("rreal-"+id);if(m)m.value=v.meta||"";if(r)r.value=v.real||"";calcRes(id);});
-  if(d.photos)Object.entries(d.photos).forEach(([id,urls])=>{if(!photoData[id])photoData[id]=[];urls.forEach(u=>{photoData[id].push(u);});renderPhotoPreview(id);});
+  if(d.resp)Object.entries(d.resp).forEach(([id,v])=>{
+    if(!processResp[id])processResp[id]={email:'',desc:''};
+    processResp[id].email=v.email||'';
+    processResp[id].desc=v.desc||'';
+    var eEl=document.getElementById('resp-email-'+id);if(eEl)eEl.value=v.email||'';
+    var dEl=document.getElementById('resp-desc-'+id);if(dEl)dEl.value=v.desc||'';
+  });
+  if(d.photos)Object.entries(d.photos).forEach(([id,urls])=>{if(!photoData[id])photoData[id]=[];if(!photoFlags[id])photoFlags[id]=[];urls.forEach((u,i)=>{photoData[id].push(u);photoFlags[id].push(!!(d.photoFlags&&d.photoFlags[id]&&d.photoFlags[id][i]));});renderPhotoPreview(id);});
   recalc();
 }
 function exportJSON(){
@@ -1619,12 +1657,16 @@ function formatPeriod(p){
 
 // ====== FOTOS ======
 const photoData={};
+const photoFlags={};
+const processResp={};
 const flaggedCases={};
 const planoProcesso={};
 function buildPhotoInputs(){
   document.querySelectorAll('.process-card').forEach(card=>{
     const id=card.id.replace('card-','');if(!id)return;
     photoData[id]=[];
+    photoFlags[id]=[];
+    processResp[id]={email:'',desc:''};
     const body=card.querySelector('.process-body');if(!body)return;
     const wrap=document.createElement('div');
     wrap.className='photo-wrap';wrap.id='photo-wrap-'+id;
@@ -1632,7 +1674,12 @@ function buildPhotoInputs(){
       +'<label class="photo-btn">+ Anexar foto'
       +'<input type="file" accept="image/*" multiple style="display:none" onchange="handlePhotoAdd(\''+id+'\',this)">'
       +'</label>'
-      +'<div class="photo-preview" id="photo-preview-'+id+'"></div>';
+      +'<div class="photo-preview" id="photo-preview-'+id+'"></div>'
+      +'<div class="resp-wrap" id="resp-wrap-'+id+'">'
+      +'<div class="photo-label">&#128231; Respons&#225;vel</div>'
+      +'<input type="email" id="resp-email-'+id+'" class="resp-email-inp" placeholder="email@clinicasim.com.br" oninput="setResp(\''+id+'\',\'email\',this.value)">'
+      +'<textarea id="resp-desc-'+id+'" class="resp-desc-ta" placeholder="Descri&#231;&#227;o / a&#231;&#227;o para este respons&#225;vel..." oninput="setResp(\''+id+'\',\'desc\',this.value)"></textarea>'
+      +'</div>';
     body.appendChild(wrap);
   });
 }
@@ -1642,6 +1689,8 @@ function handlePhotoAdd(id,input){
     reader.onload=e=>{
       if(!photoData[id])photoData[id]=[];
       photoData[id].push(e.target.result);
+      if(!photoFlags[id])photoFlags[id]=[];
+      photoFlags[id].push(false);
       renderPhotoPreview(id);
     };
     reader.readAsDataURL(file);
@@ -1653,13 +1702,30 @@ function renderPhotoPreview(id){
   c.innerHTML='';
   (photoData[id]||[]).forEach((url,i)=>{
     const w=document.createElement('div');w.className='photo-thumb-wrap';
-    w.innerHTML='<img src="'+url+'" class="photo-thumb"><button class="photo-del" onclick="removePhoto(\''+id+'\','+i+')">&#215;</button>';
+    const crit=(photoFlags[id]&&photoFlags[id][i])?true:false;
+    const imgCls='photo-thumb'+(crit?' critical':'');
+    const flagCls='photo-flag'+(crit?' flagged':'');
+    w.innerHTML='<img src="'+url+'" class="'+imgCls+'">'
+      +'<button class="photo-del" onclick="removePhoto(\''+id+'\','+i+')">&#215;</button>'
+      +'<button class="'+flagCls+'" title="Marcar foto como crítica" onclick="togglePhotoFlag(\''+id+'\','+i+')">&#128681;</button>';
     c.appendChild(w);
   });
 }
 function removePhoto(id,idx){
   if(photoData[id])photoData[id].splice(idx,1);
+  if(photoFlags[id])photoFlags[id].splice(idx,1);
   renderPhotoPreview(id);
+}
+
+function togglePhotoFlag(id,idx){
+  if(!photoFlags[id])photoFlags[id]=[];
+  photoFlags[id][idx]=!photoFlags[id][idx];
+  renderPhotoPreview(id);
+}
+
+function setResp(id,field,val){
+  if(!processResp[id])processResp[id]={email:'',desc:''};
+  processResp[id][field]=val;
 }
 
 // ====== NOVO MÊS ======
@@ -1673,7 +1739,7 @@ function novoMes(){
   document.querySelectorAll('[id^="meta-"],[id^="real-"],[id^="obs-"],[id^="rmeta-"],[id^="rreal-"]').forEach(el=>el.value='');
   document.querySelectorAll('[id^="delta-"]').forEach(el=>{el.textContent="—";el.className="delta-val";});
   document.querySelectorAll('[id^="rdif-"],[id^="rpts-"]').forEach(el=>{el.textContent="—";el.className=el.className.replace(/\s*(res-pts-ok|res-pts-bad)/g,'');});
-  Object.keys(photoData).forEach(id=>{photoData[id]=[];renderPhotoPreview(id);});
+  Object.keys(photoData).forEach(id=>{photoData[id]=[];photoFlags[id]=[];renderPhotoPreview(id);if(processResp[id]){processResp[id]={email:'',desc:''};var eEl=document.getElementById('resp-email-'+id);if(eEl)eEl.value='';var dEl=document.getElementById('resp-desc-'+id);if(dEl)dEl.value='';}});
   const tbody=document.getElementById('plano-body');if(tbody)tbody.innerHTML='';
   addPlanoRow();
   document.getElementById('eval-date').value=new Date().toISOString().slice(0,10);
@@ -1915,6 +1981,9 @@ function gerarRelatorio(){
       casosHTML+='<div style="font-size:13px;font-weight:700;color:#e65100;margin-bottom:6px;">'+c.name+'</div>';
       var note=(flaggedCases[c.id]&&flaggedCases[c.id].note)||'';
       if(note)casosHTML+='<div style="font-size:13px;margin-bottom:8px;line-height:1.6;">'+note.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>';
+      var cResp=processResp[c.id]||{};
+      if(cResp.email)casosHTML+='<div style="margin-bottom:6px;font-size:12px;"><span style="display:inline-block;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;font-weight:700;">&#128231; Responsável: '+cResp.email+'</span></div>';
+      if(cResp.desc)casosHTML+='<div style="font-size:12px;color:#555;margin-bottom:8px;padding:6px 10px;background:#f5f5f5;border-radius:6px;">'+cResp.desc.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>';
       if(photoData[c.id]&&photoData[c.id].length>0){
         photoData[c.id].forEach(function(src){
           casosHTML+='<img src="'+src+'" style="max-width:100%;height:auto;border-radius:6px;margin:4px 0;display:block;"><br>';
@@ -1966,8 +2035,36 @@ function gerarRelatorio(){
     +'if(ok)alert("✅ Copiado!\\n\\nAgora abra o Gmail, crie um novo e-mail e cole (Ctrl+V) no corpo da mensagem.\\nAs fotos e formatação serão preservadas.");'
     +'else alert("Use Ctrl+A para selecionar tudo e Ctrl+C para copiar.");}catch(e){alert("Use Ctrl+A e Ctrl+C para copiar o conteúdo.");}}'
     +'<\/script>'
-    +'</body></html>';
+    +'
+<div id="email-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:14px;padding:28px 28px 24px;max-width:580px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+    <h3 style="color:#0d3e54;margin:0 0 20px;font-size:17px;">&#128231; Enviar Relat&oacute;rio por E-mail</h3>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;display:block;margin-bottom:5px;">Para *</label>
+      <textarea id="email-to" rows="2" style="width:100%;border:1px solid #ddd;border-radius:7px;padding:8px 10px;font-size:13px;resize:vertical;box-sizing:border-box;font-family:inherit;" placeholder="email1@clinicasim.com, email2@clinicasim.com"></textarea>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;display:block;margin-bottom:5px;">CC</label>
+      <input id="email-cc" type="text" style="width:100%;border:1px solid #ddd;border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box;" placeholder="email3@clinicasim.com, ...">
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;display:block;margin-bottom:5px;">Assunto</label>
+      <input id="email-subject" type="text" style="width:100%;border:1px solid #ddd;border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box;">
+    </div>
+    <div style="background:#e3f2fd;border-radius:8px;padding:11px 14px;font-size:12px;color:#1565c0;margin-bottom:20px;line-height:1.5;">
+      &#8505; Ser&aacute; enviado de <b>peo@clinicasim.com</b>. Na primeira vez uma janela do Google abrir&aacute; para autoriza&ccedil;&atilde;o.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+      <button onclick="closeEmailModal()" style="padding:9px 20px;border-radius:7px;border:2px solid #0d3e54;background:#fff;color:#0d3e54;cursor:pointer;font-weight:700;font-size:13px;">Cancelar</button>
+      <button onclick="openRelatorioEmail()" style="padding:9px 20px;border-radius:7px;border:2px solid #888;background:#fff;color:#555;cursor:pointer;font-weight:600;font-size:13px;">&#128196; Ver relat&oacute;rio</button>
+      <button id="email-send-btn" onclick="sendGmailEmail()" style="padding:9px 22px;border-radius:7px;border:none;background:#0d3e54;color:#fff;cursor:pointer;font-weight:700;font-size:13px;">&#128231; Enviar</button>
+    </div>
+  </div>
+</div>
 
+</body></html>';
+
+  _emailHtml = html;
   var w=window.open('','_blank','width=760,height=850,scrollbars=yes');
   if(w){w.document.write(html);w.document.close();}
   else{alert('Popup bloqueado pelo navegador.\nPermita popups para este site e clique em Enviar novamente.');}
@@ -2137,6 +2234,312 @@ setTimeout(function(){
     window.location.href = 'login.html';
   }
 }, 4000);
+
+
+// ══════════════════════════════════════════════════════════════
+// FEATURE 1 — Auto-detect tipo by month
+// ══════════════════════════════════════════════════════════════
+function autoDetectTipo() {
+  var rp = document.getElementById('ref-period');
+  if (!rp || !rp.value) return;
+  var month = parseInt(rp.value.split('-')[1], 10);
+  var rs = document.getElementById('role-select');
+  if (!rs) return;
+  var newRole = [1,4,7,10].indexOf(month) >= 0 ? 'auditoria' : 'consultoria1';
+  if (rs.value !== newRole) {
+    rs.value = newRole;
+    if (typeof updateRoleVisibility === 'function') updateRoleVisibility();
+    if (typeof updateHeader === 'function') updateHeader();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// FEATURE 2 — Excel import from monthly file
+// ══════════════════════════════════════════════════════════════
+function triggerXlsxImport() {
+  var inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.xlsx,.xls';
+  inp.onchange = function(e) { importMonthlyExcel(e.target.files[0]); };
+  inp.click();
+}
+
+function _xlsxCellStr(row, col) {
+  var v = row && row[col];
+  return v !== undefined && v !== null ? String(v).trim() : '';
+}
+function _xlsxCellNum(row, col) {
+  var v = row && row[col];
+  if (typeof v === 'number') return v;
+  var s = String(v||'').replace(',','.').replace(/[%\s]/g,'');
+  var n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function importMonthlyExcel(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb = XLSX.read(e.target.result, {type:'binary'});
+      var sheetNames = wb.SheetNames;
+      if (!sheetNames.length) { alert('Arquivo sem abas.'); return; }
+
+      // Try to auto-match unit
+      var unitEl = document.getElementById('unit-name') || document.getElementById('unit-select');
+      var unitVal = unitEl ? unitEl.value.toLowerCase() : '';
+      var bestSheet = sheetNames[0];
+      var matched = false;
+      sheetNames.forEach(function(name) {
+        if (!matched && unitVal && name.toLowerCase().indexOf(unitVal) >= 0) {
+          bestSheet = name; matched = true;
+        }
+      });
+
+      if (!matched && sheetNames.length > 1) {
+        var listStr = sheetNames.map(function(s,i){ return (i+1)+'. '+s; }).join('\n');
+        var picked = prompt('Selecione a aba da unidade:\n' + listStr + '\n\nDigite o número:');
+        if (!picked) return;
+        var idx = parseInt(picked, 10) - 1;
+        if (idx >= 0 && idx < sheetNames.length) bestSheet = sheetNames[idx];
+      }
+
+      var ws = wb.Sheets[bestSheet];
+      var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+      var filled = 0;
+      var meiosRef = [];
+      var inResultados = false, inMeios = false;
+
+      rows.forEach(function(row) {
+        var b = _xlsxCellStr(row, 1).toLowerCase();
+        var a = _xlsxCellStr(row, 0).toLowerCase();
+        var merged = (b || a);
+        if (merged.indexOf('categoria result') >= 0) { inResultados = true; inMeios = false; return; }
+        if (merged.indexOf('categoria meio') >= 0) { inResultados = false; inMeios = true; return; }
+
+        if (inResultados && typeof IMPORT_MAP !== 'undefined') {
+          IMPORT_MAP.forEach(function(m) {
+            if (m.tests.some(function(t){ return merged.indexOf(t) >= 0; })) {
+              var metaRaw = _xlsxCellStr(row, 3);
+              var realRaw = _xlsxCellStr(row, 4);
+              if (metaRaw !== '') {
+                var mEl = document.getElementById('rmeta-'+m.key);
+                if (mEl) { mEl.value = metaRaw.replace(',','.'); filled++; if(typeof calcRes==='function') calcRes(m.key); }
+              }
+              if (realRaw !== '') {
+                var rEl = document.getElementById('rreal-'+m.key);
+                if (rEl) { rEl.value = realRaw.replace(',','.'); if(typeof calcRes==='function') calcRes(m.key); }
+              }
+            }
+          });
+        }
+        if (inMeios && typeof MEIOS_MAP !== 'undefined') {
+          MEIOS_MAP.forEach(function(m) {
+            if (m.tests.some(function(t){ return merged.indexOf(t) >= 0; })) {
+              var ader = _xlsxCellNum(row, 4);
+              if (ader !== null) {
+                var pct = ader <= 1 ? Math.round(ader*100) : Math.round(ader);
+                meiosRef.push(m.label + ': ' + pct + '%');
+              }
+            }
+          });
+        }
+      });
+
+      var stEl = document.getElementById('import-status');
+      if (stEl) stEl.textContent = filled > 0 ? ('✓ '+filled+' ind.') : '⚠ 0 ind.';
+      var msg = '✅ Importado da aba: ' + bestSheet + '\n' + filled + ' indicador(es) de Resultados preenchidos.';
+      if (meiosRef.length) msg += '\n\nAderência Meios (referência):\n• ' + meiosRef.join('\n• ');
+      else msg += '\n\n(Aderência Meios não encontrada nesta aba)';
+      alert(msg);
+    } catch(err) {
+      alert('Erro ao importar: ' + err.message);
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ══════════════════════════════════════════════════════════════
+// FEATURE 3 — Excel export for external data system
+// ══════════════════════════════════════════════════════════════
+function exportToExcel() {
+  if (typeof XLSX === 'undefined') { alert('Biblioteca XLSX não carregada.'); return; }
+  var wb = XLSX.utils.book_new();
+
+  var unitEl = document.getElementById('unit-name') || document.getElementById('unit-select');
+  var unitName = unitEl ? unitEl.value : '';
+  var period = (document.getElementById('ref-period')||{}).value || '';
+  var periodoRes = (document.getElementById('periodo-res')||{}).value || period;
+  var evalDate = (document.getElementById('eval-date')||{}).value || '';
+  var evaluator = (document.getElementById('evaluator-name')||{}).value || '';
+  var roleEl = document.getElementById('role-select');
+  var role = roleEl ? roleEl.value : '';
+  var RLABELS = {autoavaliacao:'Autoavaliação',consultoria1:'Consultoria 1',consultoria2:'Consultoria 2',auditoria:'Auditoria'};
+  var roleLabel = RLABELS[role] || role;
+
+  var cmTotal = (document.getElementById('cm-total-pts')||{}).textContent || '';
+  var resTotal = (document.getElementById('res-grand-pts')||{}).textContent || '';
+  var qualified = '—';
+  // Try to read qualification from banner
+  var banner = document.getElementById('qualif-banner');
+  if (banner) { qualified = banner.textContent.indexOf('✅') >= 0 || banner.textContent.indexOf('Qualificada') >= 0 ? 'Sim' : 'Não'; }
+
+  // Sheet 1: Resumo
+  var resumo = [
+    ['Campo','Valor'],
+    ['Unidade', unitName],
+    ['Período Referência', periodoRes],
+    ['Tipo de Avaliação', roleLabel],
+    ['Avaliador', evaluator],
+    ['Data', evalDate],
+    ['Total Pontos Meios', cmTotal],
+    ['Total Pontos Resultados', resTotal],
+    ['Qualificada', qualified],
+    ['Gerado em', new Date().toLocaleString('pt-BR')]
+  ];
+  var wsResumo = XLSX.utils.aoa_to_sheet(resumo);
+  wsResumo['!cols'] = [{wch:28},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+
+  // Sheet 2: Meios por Pilar
+  var meiosData = [['Pilar','Máximo','Aderência%','Pontos','Qualificado (≥65%)']];
+  if (typeof PILARES !== 'undefined') {
+    Object.entries(PILARES).forEach(function(e) {
+      var pid = e[0], pilar = e[1];
+      var pctRaw = (document.getElementById('cm-pct-'+pid)||{}).textContent || '—';
+      var ptsRaw = (document.getElementById('cm-pts-'+pid)||{}).textContent || '—';
+      var pct = parseFloat(pctRaw) || 0;
+      meiosData.push([pilar.label, pilar.max, pctRaw, ptsRaw, pct >= 65 ? 'Sim' : 'Não']);
+    });
+  }
+  meiosData.push(['TOTAL','500','—',cmTotal,'—']);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meiosData), 'Meios');
+
+  // Sheet 3: Resultados
+  var resData = [['Indicador','Sentido','Meta','Real','Diferença','Pontos']];
+  if (typeof RES_IND !== 'undefined') {
+    Object.entries(RES_IND).forEach(function(e) {
+      var id = e[0], cfg = e[1];
+      var meta = (document.getElementById('rmeta-'+id)||{}).value || '';
+      var real = (document.getElementById('rreal-'+id)||{}).value || '';
+      var dif = (document.getElementById('rdif-'+id)||{}).textContent || '';
+      var pts = (document.getElementById('rpts-'+id)||{}).textContent || '';
+      var label = cfg.label || id;
+      resData.push([label, cfg.dir==='high'?'↑ Maior melhor':'↓ Menor melhor', meta, real, dif, pts]);
+    });
+  }
+  resData.push(['TOTAL','','','','',resTotal]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resData), 'Resultados');
+
+  // Sheet 4: Processos Detalhados
+  var procData = [['Pilar','Processo','Peso','Nota','Pontos','Observação','Caso p/ Atuação','Plano de Ação']];
+  if (typeof PILARES !== 'undefined' && typeof scores !== 'undefined') {
+    Object.entries(PILARES).forEach(function(e) {
+      var pid = e[0], pilar = e[1];
+      Object.entries(pilar.processos).forEach(function(pe) {
+        var procId = pe[0], proc = pe[1];
+        var nota = (scores[procId] && scores[procId][role] !== undefined) ? scores[procId][role] : '';
+        var obs = (document.getElementById('obs-'+procId)||{}).value || '';
+        var caso = (document.getElementById('caso-'+procId)||{}).value || '';
+        var plano = (document.getElementById('plano-'+procId)||{}).value || '';
+        var pts = nota !== '' ? ((parseFloat(nota)/3)*proc.w).toFixed(1) : '';
+        procData.push([pilar.label, proc.n, proc.w, nota, pts, obs, caso, plano]);
+      });
+    });
+  }
+  var wsProc = XLSX.utils.aoa_to_sheet(procData);
+  wsProc['!cols'] = [{wch:14},{wch:36},{wch:8},{wch:8},{wch:8},{wch:32},{wch:32},{wch:32}];
+  XLSX.utils.book_append_sheet(wb, wsProc, 'Processos');
+
+  var safeName = function(s){ return s.replace(/[\\\/\?\*\[\]:]/g,'').replace(/\s+/g,'-'); };
+  var fileName = 'PEO_' + safeName(unitName||'unidade') + '_' + safeName(periodoRes||period||'periodo') + '_' + safeName(roleLabel) + '.xlsx';
+  XLSX.writeFile(wb, fileName);
+}
+
+
+// Gmail API send
+const GMAIL_CLIENT_ID = '495445621819-r6tbe4r9krsnu5p79es2au5urpd150u1.apps.googleusercontent.com';
+let _emailHtml = '';
+
+function openEmailModal() {
+  exportJSON();
+  var unitEl = document.getElementById('unit-name') || document.getElementById('unit-select');
+  var unit = unitEl ? unitEl.value : '';
+  var slug = unit.toLowerCase()
+    .replace(/[áàâã]/g,'a').replace(/[éêè]/g,'e').replace(/[íì]/g,'i')
+    .replace(/[óôõò]/g,'o').replace(/[úùû]/g,'u').replace(/[ç]/g,'c')
+    .replace(/[\s]+/g,'').replace(/[^a-z0-9]/g,'');
+  var unitEmail = slug ? 'unidade.' + slug + '@clinicasim.com' : '';
+  var period = (document.getElementById('ref-period')||{}).value || '';
+  var periodoRes = (document.getElementById('periodo-res')||{}).value || period;
+  var roleVal = (document.getElementById('role-select')||{}).value || '';
+  var tipoLabel = {consultoria1:'Consultoria',consultoria2:'Consultoria',auditoria:'Auditoria',autoavaliacao:'Autoavaliacao'}[roleVal] || 'Consultoria';
+  var months = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var monthName = period ? (months[parseInt(period.split('-')[1])-1] || periodoRes) : periodoRes;
+  var subject = 'Relatorio de ' + tipoLabel + ' PEO - Unidade ' + (unit||'[Unidade]') + ' (' + monthName + ')';
+  var toDefault = (unitEmail ? unitEmail + ', ' : '') + 'roberio.bessa@clinicasim.com';
+  document.getElementById('email-to').value = toDefault;
+  document.getElementById('email-cc').value = '';
+  document.getElementById('email-subject').value = subject;
+  document.getElementById('email-modal').style.display = 'flex';
+}
+
+function closeEmailModal() {
+  document.getElementById('email-modal').style.display = 'none';
+}
+
+function sendGmailEmail() {
+  var to = document.getElementById('email-to').value.trim();
+  if (!to) { alert('Preencha o campo Para.'); return; }
+  var btn = document.getElementById('email-send-btn');
+  btn.disabled = true; btn.textContent = 'Gerando...';
+  _emailHtml = '';
+  openRelatorioEmail();
+  if (!_emailHtml) { alert('Erro ao gerar relatorio.'); btn.disabled=false; btn.textContent='Enviar'; return; }
+  btn.textContent = 'Autenticando...';
+  var tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GMAIL_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/gmail.send',
+    login_hint: 'peo@clinicasim.com',
+    callback: function(resp) {
+      if (resp.error) { alert('Erro de autenticacao: ' + resp.error); btn.disabled=false; btn.textContent='Enviar'; return; }
+      btn.textContent = 'Enviando...';
+      _doSendGmail(resp.access_token);
+    }
+  });
+  tokenClient.requestAccessToken();
+}
+
+function _doSendGmail(token) {
+  var to = document.getElementById('email-to').value.trim();
+  var cc = document.getElementById('email-cc').value.trim();
+  var subject = document.getElementById('email-subject').value.trim();
+  var btn = document.getElementById('email-send-btn');
+  var lines = ['From: Programa de Excelencia Operacional <peo@clinicasim.com>',
+    'To: ' + to,
+    cc ? 'Cc: ' + cc : null,
+    'Subject: =?UTF-8?B?' + btoa(unescape(encodeURIComponent(subject))) + '?=',
+    'MIME-Version: 1.0',
+    'Content-Type: text/html; charset=utf-8',
+    '',
+    _emailHtml
+  ].filter(function(l){return l!==null;}).join('\r\n');
+  var encoded = btoa(unescape(encodeURIComponent(lines)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body: JSON.stringify({raw: encoded})
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    btn.disabled=false; btn.textContent='Enviar';
+    if(data.id){alert('E-mail enviado de peo@clinicasim.com!'); closeEmailModal();}
+    else{alert('Erro: '+JSON.stringify(data));}
+  })
+  .catch(function(e){btn.disabled=false; btn.textContent='Enviar'; alert('Erro: '+e.message);});
+}
 
 </script>
 </body>
