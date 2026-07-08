@@ -1121,7 +1121,10 @@
 <div class="pane" id="pane-resultados">
   <div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:20px;margin-bottom:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-      <h2 style="color:var(--blue);font-size:16px;">Categoria Resultados</h2>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <h2 style="color:var(--blue);font-size:16px;margin:0;">Categoria Resultados</h2>
+        <button id="btn-sheets-import" onclick="importFromSheets()" style="display:none;padding:5px 13px;border-radius:7px;border:none;background:#1a6f3e;color:#fff;cursor:pointer;font-size:12px;font-weight:700;">&#128202; Buscar da Planilha</button>
+      </div>
       <div style="display:flex;gap:16px;">
         <div class="total-box"><div class="val" id="res-total-pts">0</div><div class="lbl">Pontos</div></div>
         <div class="total-box"><div class="val" id="res-total-pct">0%</div><div class="lbl">de 500</div></div>
@@ -1417,6 +1420,8 @@ function updateRoleVisibility(){
   Object.values(PILARES).forEach(p=>Object.keys(p.processos).forEach(id=>{
     Object.keys(ROLE_LABELS).forEach(role=>{const col=document.getElementById("col-"+id+"-"+role);if(col)col.style.opacity=(!activeRole||role===activeRole)?"1":"0.35";});
   }));
+  var btnSheets=document.getElementById('btn-sheets-import');
+  if(btnSheets) btnSheets.style.display=(activeRole==='auditoria')?'':'none';
   recalc();
 }
 function showTab(name,el){
@@ -1556,30 +1561,111 @@ function updateResTotals(){
   updateQualificacao();
 }
 // ====== CATEGORIA MEIOS (auto from pillar scores) ======
+var _importedMeiosPct = null; // null = calcular dos scores; objeto = usar valores importados da planilha
 function updateCategoriaMeios(){
   let totalMeios=0;
   [["operacoes",150],["vendas",150],["gente",100],["gestao",100]].forEach(([pid,max])=>{
-    const scoreEl=document.getElementById("score-"+pid);
-    if(!scoreEl){return;}
-    const pts=parseFloat(scoreEl.textContent)||0;
-    const pct=Math.round((pts/max)*100);
-    const qualif=pct>=65;
-    const mPts=qualif?pts:0;
-    totalMeios+=mPts;
-    const pctEl=document.getElementById("cm-pct-"+pid);
-    const nvEl=document.getElementById("cm-nivel-"+pid);
-    const mPtsEl=document.getElementById("cm-pts-"+pid);
-    if(pctEl)pctEl.textContent=pct+"%";
-    if(nvEl){
-      nvEl.innerHTML=qualif
-        ?'<span style="background:#e8f5e9;color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">Qualificado</span>'
-        :'<span style="background:#ffebee;color:var(--red);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">Nao Qualificado</span>';
+    var pct, mPts;
+    if(_importedMeiosPct !== null && _importedMeiosPct[pid] !== undefined){
+      pct = _importedMeiosPct[pid];
+      const qualif=pct>=65;
+      mPts=qualif?(pct/100)*max:0;
+      totalMeios+=mPts;
+      const pctEl=document.getElementById("cm-pct-"+pid);
+      const nvEl=document.getElementById("cm-nivel-"+pid);
+      const mPtsEl=document.getElementById("cm-pts-"+pid);
+      if(pctEl)pctEl.textContent=pct.toFixed(0)+"%";
+      if(nvEl){nvEl.innerHTML=qualif?'<span style="background:#e8f5e9;color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">Qualificado</span>':'<span style="background:#ffebee;color:var(--red);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">Nao Qualificado</span>';}
+      if(mPtsEl)mPtsEl.textContent=qualif?mPts.toFixed(1):"0";
+    } else {
+      const scoreEl=document.getElementById("score-"+pid);
+      if(!scoreEl){return;}
+      const pts=parseFloat(scoreEl.textContent)||0;
+      pct=Math.round((pts/max)*100);
+      const qualif=pct>=65;
+      mPts=qualif?pts:0;
+      totalMeios+=mPts;
+      const pctEl=document.getElementById("cm-pct-"+pid);
+      const nvEl=document.getElementById("cm-nivel-"+pid);
+      const mPtsEl=document.getElementById("cm-pts-"+pid);
+      if(pctEl)pctEl.textContent=pct+"%";
+      if(nvEl){nvEl.innerHTML=qualif?'<span style="background:#e8f5e9;color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">Qualificado</span>':'<span style="background:#ffebee;color:var(--red);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">Nao Qualificado</span>';}
+      if(mPtsEl)mPtsEl.textContent=qualif?mPts.toFixed(1):"0";
     }
-    if(mPtsEl)mPtsEl.textContent=qualif?mPts.toFixed(1):"0";
   });
   const cmEl=document.getElementById("cm-total-pts");
   if(cmEl)cmEl.textContent=totalMeios.toFixed(1);
 }
+
+// ====== GOOGLE SHEETS IMPORT (Auditoria) ======
+const SHEETS_SPREADSHEET_ID = '1tv_pgSPi-pauuQBAuPLR_nOKQBjJC3cFLn8ghWSG48U';
+var SHEETS_UNIT_MAP = {
+  'Centro':      'Centro - CE',
+  'Via Sul':     'Via Sul Shopping - CE',
+  'Messejana':   'Messejana - CE',
+  'Fátima':      'Fátima - CE',
+  'NSF':         'North Shopping - CE',
+  'Itaperi':     'Itaperi - CE',
+  'Maraponga':   'Maraponga - CE',
+  'Eusébio':     'Eusébio - CE',
+  'Jóquei':      'Jóquei Clube - CE',
+  'RMF':         'RMF - CE',
+};
+
+function importFromSheets() {
+  var unitVal = (document.getElementById('unit-name')||{}).value || '';
+  if (!unitVal) { alert('Selecione a unidade antes de importar.'); return; }
+  var sheetTab = SHEETS_UNIT_MAP[unitVal] || unitVal;
+  var btn = document.getElementById('btn-sheets-import');
+  if(btn){ btn.disabled=true; btn.textContent='Buscando...'; }
+  var tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GMAIL_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    login_hint: 'peo@clinicasim.com',
+    callback: function(resp){
+      if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
+      if(resp.access_token) _doFetchSheets(resp.access_token, sheetTab);
+      else alert('Erro ao autorizar acesso à planilha.');
+    }
+  });
+  tokenClient.requestAccessToken();
+}
+
+function _doFetchSheets(token, sheetName){
+  var range = encodeURIComponent(sheetName + '!B9:G22');
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + SHEETS_SPREADSHEET_ID + '/values/' + range;
+  fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var rows = data.values || [];
+      if(!rows.length){ alert('Aba não encontrada na planilha: "' + sheetName + '".\nVerifique o mapeamento de unidade.'); return; }
+      // Resultados rows[1]-rows[5]: B=nome C=max D=meta E=real
+      var resMap=['turnover','tme','gsvcli','sim','custo'];
+      for(var i=0;i<5;i++){
+        var row=rows[i+1]; if(!row) continue;
+        var meta=(row[2]||'').toString().trim();
+        var real=(row[3]||'').toString().trim();
+        var mEl=document.getElementById('rmeta-'+resMap[i]);
+        var rEl=document.getElementById('rreal-'+resMap[i]);
+        if(mEl) mEl.value=meta;
+        if(rEl) rEl.value=real;
+        calcRes(resMap[i]);
+      }
+      // Meios rows[9]-rows[12]: B=pilar C=max D=meta_qualif E=aderencia
+      var meiosMap=['operacoes','vendas','gente','gestao'];
+      _importedMeiosPct={};
+      for(var j=0;j<4;j++){
+        var mrow=rows[j+9]; if(!mrow) continue;
+        var adh=parseFloat((mrow[3]||'0').toString().replace('%','').replace(',','.').trim())||0;
+        _importedMeiosPct[meiosMap[j]]=adh;
+      }
+      updateCategoriaMeios();
+      var statusEl=document.getElementById('import-status');
+      if(statusEl) statusEl.textContent='✅ Planilha importada: '+sheetName;
+    })
+    .catch(function(e){ alert('Erro ao buscar planilha: '+e.message); });
+}
+
 // ====== IMPORTAÇÃO DE DADOS ======
 let importedData={};
 function handleImport(input){
