@@ -160,7 +160,7 @@
   </div>
 </div>
 <div class="setup-bar">
-  <label>Unidade</label><select id="unit-name" onchange="updateHeader();tryAutoFill()"><option value="">(selecionar)</option><option value="Centro">Centro</option><option value="Via Sul">Via Sul</option><option value="Messejana">Messejana</option><option value="Fátima">Fátima</option><option value="NSF">NSF</option><option value="RMF">RMF</option><option value="Eusébio">Eusébio</option><option value="Maraponga">Maraponga</option><option value="Itaperi">Itaperi</option><option value="Jóquei">Jóquei</option><option value="RMR">RMR</option><option value="Boa Vista">Boa Vista</option><option value="Guararapes">Guararapes</option><option value="Prazeres">Prazeres</option><option value="Tacaruna">Tacaruna</option><option value="Lapa">Lapa</option></select>
+  <label>Unidade</label><select id="unit-name" onchange="updateHeader();tryAutoFill()"><option value="">(selecionar)</option><optgroup label="REG1 — Ceará"><option value="North Shopping - CE">North Shopping - CE</option><option value="Messejana - CE">Messejana - CE</option><option value="Centro - CE">Centro - CE</option><option value="Itaperi - CE">Itaperi - CE</option><option value="Via Sul Shopping - CE">Via Sul Shopping - CE</option><option value="Fatima - CE">Fatima - CE</option><option value="Joquei - CE">Joquei - CE</option><option value="Maraponga II - CE">Maraponga II - CE</option><option value="Riomar Fortaleza - CE">Riomar Fortaleza - CE</option><option value="Eusebio - CE">Eusebio - CE</option></optgroup><optgroup label="REG2 — Pernambuco / Bahia"><option value="Prazeres - PE">Prazeres - PE</option><option value="Riomar Recife - PE">Riomar Recife - PE</option><option value="Boa Vista - PE">Boa Vista - PE</option><option value="Guararapes - PE">Guararapes - PE</option><option value="Shopping Tacaruna - PE">Shopping Tacaruna - PE</option><option value="Lapa - BA">Lapa - BA</option></optgroup></select>
   <div class="sep"></div>
   <label>Papel</label>
   <select id="role-select" onchange="updateHeader();updateRoleVisibility()">
@@ -1599,18 +1599,7 @@ function updateCategoriaMeios(){
 
 // ====== GOOGLE SHEETS IMPORT (Auditoria) ======
 const SHEETS_SPREADSHEET_ID = '1tv_pgSPi-pauuQBAuPLR_nOKQBjJC3cFLn8ghWSG48U';
-var SHEETS_UNIT_MAP = {
-  'Centro':      'Centro - CE',
-  'Via Sul':     'Via Sul Shopping - CE',
-  'Messejana':   'Messejana - CE',
-  'Fátima':      'Fátima - CE',
-  'NSF':         'North Shopping - CE',
-  'Itaperi':     'Itaperi - CE',
-  'Maraponga':   'Maraponga - CE',
-  'Eusébio':     'Eusébio - CE',
-  'Jóquei':      'Jóquei Clube - CE',
-  'RMF':         'RMF - CE',
-};
+var SHEETS_UNIT_MAP = {}; // nomes do dropdown já coincidem com as abas da planilha
 
 function importFromSheets() {
   var unitVal = (document.getElementById('unit-name')||{}).value || '';
