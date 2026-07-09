@@ -1610,26 +1610,30 @@ function importFromSheets() {
     alert('Biblioteca Google ainda carregando. Aguarde alguns segundos e tente novamente.');
     return;
   }
-  if(btn){ btn.disabled=true; btn.textContent='Autenticando...'; }
+  if(btn){ btn.disabled=true; btn.innerHTML='Autenticando...'; }
   var tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GMAIL_CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
     callback: function(resp){
       if(resp.error){
-        if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
-        alert('Erro de autenticação:\n'+(resp.error_description||resp.error));
+        if(btn){ btn.disabled=false; btn.innerHTML='&#128202; Buscar da Planilha'; }
+        alert('Erro OAuth: '+(resp.error_description||resp.error));
         return;
       }
       if(resp.access_token){
-        if(btn) btn.textContent='Carregando...';
+        if(btn) btn.innerHTML='Carregando...';
         _doFetchSheets(resp.access_token, sheetTab);
       } else {
-        if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
+        if(btn){ btn.disabled=false; btn.innerHTML='&#128202; Buscar da Planilha'; }
         alert('Autorização cancelada ou token não recebido.');
       }
+    },
+    error_callback: function(err){
+      if(btn){ btn.disabled=false; btn.innerHTML='&#128202; Buscar da Planilha'; }
+      alert('Erro ao abrir janela de autorização Google.\nVerifique se popups estão permitidos para este site.\nDetalhe: '+(err.type||JSON.stringify(err)));
     }
   });
-  tokenClient.requestAccessToken({prompt:''});
+  tokenClient.requestAccessToken({prompt:'select_account'});
 }
 
 function _doFetchSheets(token, sheetName){
@@ -1646,7 +1650,7 @@ function _doFetchSheets(token, sheetName){
       return r.json();
     })
     .then(function(data){
-      if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
+      if(btn){ btn.disabled=false; btn.innerHTML='&#128202; Buscar da Planilha'; }
       if(data.error){ alert('Erro da API Google Sheets:\n'+data.error.message); return; }
       var rows = data.values || [];
       if(!rows.length){ alert('Aba "'+sheetName+'" não encontrada ou vazia na planilha.'); return; }
@@ -1683,7 +1687,7 @@ function _doFetchSheets(token, sheetName){
       if(statusEl) statusEl.textContent='✅ Importado: '+sheetName;
     })
     .catch(function(e){
-      if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
+      if(btn){ btn.disabled=false; btn.innerHTML='&#128202; Buscar da Planilha'; }
       alert('Erro ao buscar planilha:\n'+e.message);
     });
 }
