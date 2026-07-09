@@ -1606,32 +1606,54 @@ function importFromSheets() {
   if (!unitVal) { alert('Selecione a unidade antes de importar.'); return; }
   var sheetTab = SHEETS_UNIT_MAP[unitVal] || unitVal;
   var btn = document.getElementById('btn-sheets-import');
-  if(btn){ btn.disabled=true; btn.textContent='Buscando...'; }
+  if(typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2){
+    alert('Biblioteca Google ainda carregando. Aguarde alguns segundos e tente novamente.');
+    return;
+  }
+  if(btn){ btn.disabled=true; btn.textContent='Autenticando...'; }
   var tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GMAIL_CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
-    login_hint: 'peo@clinicasim.com',
     callback: function(resp){
-      if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
-      if(resp.access_token) _doFetchSheets(resp.access_token, sheetTab);
-      else alert('Erro ao autorizar acesso à planilha.');
+      if(resp.error){
+        if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
+        alert('Erro de autenticação:\n'+(resp.error_description||resp.error));
+        return;
+      }
+      if(resp.access_token){
+        if(btn) btn.textContent='Carregando...';
+        _doFetchSheets(resp.access_token, sheetTab);
+      } else {
+        if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
+        alert('Autorização cancelada ou token não recebido.');
+      }
     }
   });
-  tokenClient.requestAccessToken();
+  tokenClient.requestAccessToken({prompt:''});
 }
 
 function _doFetchSheets(token, sheetName){
+  var btn = document.getElementById('btn-sheets-import');
   var range = encodeURIComponent(sheetName + '!B9:G22');
   var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + SHEETS_SPREADSHEET_ID + '/values/' + range;
   fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
-    .then(function(r){ return r.json(); })
+    .then(function(r){
+      if(!r.ok){
+        return r.json().then(function(e){
+          throw new Error((e.error&&e.error.message)?e.error.message:'HTTP '+r.status+' '+r.statusText);
+        });
+      }
+      return r.json();
+    })
     .then(function(data){
+      if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
+      if(data.error){ alert('Erro da API Google Sheets:\n'+data.error.message); return; }
       var rows = data.values || [];
-      if(!rows.length){ alert('Aba não encontrada na planilha: "' + sheetName + '".\nVerifique o mapeamento de unidade.'); return; }
-      // Resultados rows[1]-rows[5]: B=nome C=max D=meta E=real
+      if(!rows.length){ alert('Aba "'+sheetName+'" não encontrada ou vazia na planilha.'); return; }
+      // Resultados rows[1]-rows[5]: col[2]=Meta col[3]=Real (B=nome C=max D=meta E=real)
       var resMap=['turnover','tme','gsvcli','sim','custo'];
       for(var i=0;i<5;i++){
-        var row=rows[i+1]; if(!row) continue;
+        var row=rows[i+1]; if(!row||row.length<4) continue;
         var meta=(row[2]||'').toString().trim();
         var real=(row[3]||'').toString().trim();
         var mEl=document.getElementById('rmeta-'+resMap[i]);
@@ -1640,19 +1662,30 @@ function _doFetchSheets(token, sheetName){
         if(rEl) rEl.value=real;
         calcRes(resMap[i]);
       }
-      // Meios rows[9]-rows[12]: B=pilar C=max D=meta_qualif E=aderencia
+      // Dynamically find "Categoria Meios" header row (robust to empty rows between sections)
+      var meiosHeaderIdx = -1;
+      for(var r=0;r<rows.length;r++){
+        if(rows[r]&&rows[r][0]&&rows[r][0].toString().toLowerCase().indexOf('categoria meios')!==-1){
+          meiosHeaderIdx=r; break;
+        }
+      }
+      if(meiosHeaderIdx<0) meiosHeaderIdx=8; // fallback: row 17 = index 8 from B9
+      // Meios data: meiosHeaderIdx+1 .. meiosHeaderIdx+4 (col[3]=Aderência)
       var meiosMap=['operacoes','vendas','gente','gestao'];
       _importedMeiosPct={};
       for(var j=0;j<4;j++){
-        var mrow=rows[j+9]; if(!mrow) continue;
+        var mrow=rows[meiosHeaderIdx+1+j]; if(!mrow) continue;
         var adh=parseFloat((mrow[3]||'0').toString().replace('%','').replace(',','.').trim())||0;
         _importedMeiosPct[meiosMap[j]]=adh;
       }
       updateCategoriaMeios();
       var statusEl=document.getElementById('import-status');
-      if(statusEl) statusEl.textContent='✅ Planilha importada: '+sheetName;
+      if(statusEl) statusEl.textContent='✅ Importado: '+sheetName;
     })
-    .catch(function(e){ alert('Erro ao buscar planilha: '+e.message); });
+    .catch(function(e){
+      if(btn){ btn.disabled=false; btn.textContent='&#128202; Buscar da Planilha'; }
+      alert('Erro ao buscar planilha:\n'+e.message);
+    });
 }
 
 // ====== IMPORTAÇÃO DE DADOS ======
